@@ -29,6 +29,8 @@ using ImageIOType = itk::GDCMImageIO;
 
 using SeriesReaderType = itk::ImageSeriesReader<Image3DType>;
 using Series2DWriterType = itk::ImageSeriesWriter<Image3DType, ImageType>;
+using Series3DWriterType = itk::ImageSeriesWriter<Image3DType, Image3DType>;
+
 using Writer3Dtype = itk::ImageFileWriter<Image3DType>;
 using ReaderType = itk::ImageFileReader<ImageType>;
 using WriterType = itk::ImageFileWriter<ImageType>;
@@ -49,6 +51,7 @@ try{
 	Image3DType::Pointer image3D = Image3DType::New();
 	ImageIOType::Pointer dicomIO = ImageIOType::New();
 	Writer3Dtype::Pointer writer3D = Writer3Dtype::New();
+	Series3DWriterType::Pointer series3DWriter = Series3DWriterType::New();
 	itk::GDCMImageIO::Pointer gdcmImageIO = itk::GDCMImageIO::New();
 
 
@@ -79,7 +82,10 @@ try{
 	//series2DWriter->SetMetaDataDictionaryArray(seriesReader->GetMetaDataDictionaryArray());
 	series2DWriter->SetInput(image3D);
 	series2DWriter->Update();
-
+	
+	series3DWriter->SetInput(image3D);
+	series3DWriter->SetFileName("..\\wyniki\\img3D.vtk");
+	series3DWriter->Update();
 	
 	reader->SetFileName("../wyniki/IMG00048.dcm");
 	reader->Update();
