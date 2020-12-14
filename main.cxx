@@ -19,8 +19,7 @@
 #include<itkBinaryBallStructuringElement.h>
 #include<itkErodeObjectMorphologyImageFilter.h>
 #include<itkBinaryErodeImageFilter.h>
-
-
+#include<itkConnectedComponentImageFilter.h>
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
@@ -37,7 +36,7 @@ using Writer3Dtype = itk::ImageFileWriter<Image3DType>;
 using ReaderType = itk::ImageFileReader<ImageType>;
 using WriterType = itk::ImageFileWriter<ImageType>;
 
-
+using ConnectedComponent = itk::ConnectedComponentImageFilter<Image3DType, Image3DType, Image3DType>;
 using NumSeriesFileNames = itk::NumericSeriesFileNames;
 int main() // glowna funkcja programu
 {
@@ -54,6 +53,7 @@ try{
 	ImageIOType::Pointer dicomIO = ImageIOType::New();
 	Writer3Dtype::Pointer writer3D = Writer3Dtype::New();
 	Series3DWriterType::Pointer series3DWriter = Series3DWriterType::New();
+	ConnectedComponent::Pointer CCImageFilter = ConnectedComponent::New();
 	itk::GDCMImageIO::Pointer gdcmImageIO = itk::GDCMImageIO::New();
 
 
@@ -71,7 +71,7 @@ try{
 
 
 	//std::cout << image3D;
-	std::cout << seriesReader->GetMetaDataDictionaryArray();
+	//std::cout << seriesReader->GetMetaDataDictionaryArray();
 
 	//Zapisywanie serii obrazowej 
 
@@ -93,7 +93,7 @@ try{
 	//reader->Update();
 	//image = reader->GetOutput();
 
-
+	//binaryzacja
 	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
 	FilterType::Pointer thresholder = FilterType::New();
 	thresholder->SetInput(image3D);
@@ -102,10 +102,9 @@ try{
 	thresholder->SetLowerThreshold(600);
 	
 	series3DWriter->SetInput(thresholder->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_op.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\img3D_bin.vtk");
 	series3DWriter->Update();
-
-	//erozja
+//erozja
 	//BallType::SizeType rad;
 	//rad[0] = 1;
 	//rad[1] = 1;
@@ -130,7 +129,6 @@ try{
 	//series3DWriter->SetInput(erodeFilter->GetOutput());
 	//series3DWriter->SetFileName("..\\wyniki\\img3D_erode.vtk");
 	//series3DWriter->Update();
-
 	//otwarcie
 	BallType::SizeType rad;
 	rad[0] = 9;
@@ -152,6 +150,12 @@ try{
 	series3DWriter->SetInput(openingFilter->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\img3D_op_seria.vtk");
 	series3DWriter->Update();
+
+	CCImageFilter->SetInput(image3D);
+	CCImageFilter->Update();
+	std::cout << CCImageFilter->GetObjectCount() << std::endl;
+	
+	//series3DWriter->SetInput(image3D);
 
 	//writer->SetInput(openingFilter->GetOutput());
 	//writer->SetFileName("../wyniki/otwarcie_48.dcm");
