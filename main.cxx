@@ -91,47 +91,42 @@ try{
 	reader->Update();
 	image = reader->GetOutput();
 
-	using FilterTypeInt = itk::IntensityWindowingImageFilter<ImageType>;
-	FilterTypeInt::Pointer filter = FilterTypeInt::New();
-	filter->SetInput(image);
-	filter->SetOutputMaximum(100);
-	filter->SetOutputMinimum(0);
-	filter->SetWindowLevel(500 + 500, (500 - 500) / 2);
-	writer->SetInput(filter->GetOutput());
-	writer->SetFileName("../wyniki/intensywnosc_48.dcm");
-	writer->Update();
 
-	using FilterType = itk::BinaryThresholdImageFilter<ImageType, ImageType>;
+	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
 	FilterType::Pointer thresholder = FilterType::New();
-	thresholder->SetInput(image);
+	thresholder->SetInput(image3D);
 	thresholder->SetInsideValue(1);
 	thresholder->SetOutsideValue(0);
 	thresholder->SetLowerThreshold(600);
-	thresholder->SetUpperThreshold(800);
-	writer->SetInput(thresholder->GetOutput());
-	writer->SetFileName("../wyniki/binaryzacja_48.dcm");
-	writer->Update();
-
-	BallType::SizeType rad;
+	
+	series3DWriter->SetInput(thresholder->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_op.vtk");
+	series3DWriter->Update();
+	//otwarcie
+	/*BallType::SizeType rad;
 	rad[0] = 9;
 	rad[1] = 5;
 	int radius = 2;
-	using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, ImageType::ImageDimension>;
+	using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
 	StructuringElementType structuringElement;
 	structuringElement.SetRadius(radius);
 	structuringElement.CreateStructuringElement();
 
-	using BinaryMorphologicalOpeningImageFilterType = itk::BinaryMorphologicalOpeningImageFilter <ImageType, ImageType, StructuringElementType>;
+	using BinaryMorphologicalOpeningImageFilterType = itk::BinaryMorphologicalOpeningImageFilter <Image3DType, Image3DType, StructuringElementType>;
 	BinaryMorphologicalOpeningImageFilterType::Pointer openingFilter
 		= BinaryMorphologicalOpeningImageFilterType::New();
-	openingFilter->SetInput(thresholder->GetOutput());
+	openingFilter->SetInput(image3D);
 	openingFilter->SetKernel(structuringElement);
 	openingFilter->SetForegroundValue(1);
 	openingFilter->Update();
 
-	writer->SetInput(openingFilter->GetOutput());
-	writer->SetFileName("../wyniki/otwarcie_48.dcm");
-	writer->Update();
+	series3DWriter->SetInput(openingFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_op.vtk");
+	series3DWriter->Update();*/
+
+	//writer->SetInput(openingFilter->GetOutput());
+	//writer->SetFileName("../wyniki/otwarcie_48.dcm");
+	//writer->Update();
 
 
 	//using FilterType = itk::OtsuMultipleThresholdsImageFilter<ImageType, ImageType>;
