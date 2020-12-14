@@ -17,12 +17,14 @@
 #include<itkOtsuMultipleThresholdsImageFilter.h>
 #include<itkBinaryMorphologicalOpeningImageFilter.h>
 #include<itkBinaryBallStructuringElement.h>
+#include<itkErodeObjectMorphologyImageFilter.h>
+#include<itkBinaryErodeImageFilter.h>
 
 
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
-using BallType = itk::BinaryBallStructuringElement<short, 2>;
+using BallType = itk::BinaryBallStructuringElement<short, 3>;
 
 using Image3DType = itk::Image<PixelType, 3>;
 using ImageIOType = itk::GDCMImageIO;
@@ -73,23 +75,23 @@ try{
 
 	//Zapisywanie serii obrazowej 
 
-	numSeriesFileNames->SetSeriesFormat("..\\wyniki\\IMG\%05d.dcm");
-	numSeriesFileNames->SetStartIndex(1);
-	numSeriesFileNames->SetEndIndex(image3D->GetLargestPossibleRegion().GetSize()[2]);
+	//numSeriesFileNames->SetSeriesFormat("..\\wyniki\\IMG\%05d.dcm");
+	//numSeriesFileNames->SetStartIndex(1);
+	//numSeriesFileNames->SetEndIndex(image3D->GetLargestPossibleRegion().GetSize()[2]);
 
-	series2DWriter->SetFileNames(numSeriesFileNames->GetFileNames());
-    series2DWriter->SetImageIO(gdcmImageIO);
-	//series2DWriter->SetMetaDataDictionaryArray(seriesReader->GetMetaDataDictionaryArray());
-	series2DWriter->SetInput(image3D);
-	series2DWriter->Update();
-	
+	//series2DWriter->SetFileNames(numSeriesFileNames->GetFileNames());
+ //   series2DWriter->SetImageIO(gdcmImageIO);
+	////series2DWriter->SetMetaDataDictionaryArray(seriesReader->GetMetaDataDictionaryArray());
+	//series2DWriter->SetInput(image3D);
+	//series2DWriter->Update();
+	//
 	series3DWriter->SetInput(image3D);
 	series3DWriter->SetFileName("..\\wyniki\\img3D.vtk");
 	series3DWriter->Update();
 	
-	reader->SetFileName("../wyniki/IMG00048.dcm");
-	reader->Update();
-	image = reader->GetOutput();
+	//reader->SetFileName("../wyniki/IMG00048.dcm");
+	//reader->Update();
+	//image = reader->GetOutput();
 
 
 	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
@@ -102,11 +104,38 @@ try{
 	series3DWriter->SetInput(thresholder->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\img3D_op.vtk");
 	series3DWriter->Update();
+
+	//erozja
+	//BallType::SizeType rad;
+	//rad[0] = 1;
+	//rad[1] = 1;
+	//int radius = 1;
+	//using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
+	//StructuringElementType structuringElement;
+	//structuringElement.SetRadius(radius);
+	//structuringElement.CreateStructuringElement();
+
+	//using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
+	//FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
+	//erodeFilter->SetInput(thresholder->GetOutput());
+	//erodeFilter->SetKernel(structuringElement);
+	//erodeFilter->SetBackgroundValue(0);
+	//erodeFilter->SetForegroundValue(1);
+	////for (size_t i = 0; i < 1; i++)
+	////{
+	//	erodeFilter->Update();
+	//	//image3D = erodeFilter->GetOutput();
+	////}
+	//
+	//series3DWriter->SetInput(erodeFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_erode.vtk");
+	//series3DWriter->Update();
+
 	//otwarcie
-	/*BallType::SizeType rad;
+	BallType::SizeType rad;
 	rad[0] = 9;
 	rad[1] = 5;
-	int radius = 2;
+	int radius = 1;
 	using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
 	StructuringElementType structuringElement;
 	structuringElement.SetRadius(radius);
@@ -115,14 +144,14 @@ try{
 	using BinaryMorphologicalOpeningImageFilterType = itk::BinaryMorphologicalOpeningImageFilter <Image3DType, Image3DType, StructuringElementType>;
 	BinaryMorphologicalOpeningImageFilterType::Pointer openingFilter
 		= BinaryMorphologicalOpeningImageFilterType::New();
-	openingFilter->SetInput(image3D);
+	openingFilter->SetInput(thresholder->GetOutput());
 	openingFilter->SetKernel(structuringElement);
 	openingFilter->SetForegroundValue(1);
 	openingFilter->Update();
 
 	series3DWriter->SetInput(openingFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_op.vtk");
-	series3DWriter->Update();*/
+	series3DWriter->SetFileName("..\\wyniki\\img3D_op_seria.vtk");
+	series3DWriter->Update();
 
 	//writer->SetInput(openingFilter->GetOutput());
 	//writer->SetFileName("../wyniki/otwarcie_48.dcm");
