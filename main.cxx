@@ -127,43 +127,40 @@ try{
 	series3DWriter->Update();
 
 	//binaryzacja
-	//using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
-	//FilterType::Pointer thresholder = FilterType::New();
-	//thresholder->SetInput(image3D);
-	//thresholder->SetInsideValue(1);
-	//thresholder->SetOutsideValue(0);
-	//thresholder->SetLowerThreshold(600);
-	//
-	//series3DWriter->SetInput(thresholder->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_bin.vtk");
-	//series3DWriter->Update();
+	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
+	FilterType::Pointer thresholder = FilterType::New();
+	thresholder->SetInput(cropFilter->GetOutput());
+	thresholder->SetInsideValue(1);
+	thresholder->SetOutsideValue(0);
+	thresholder->SetLowerThreshold(600);
+	
+	series3DWriter->SetInput(thresholder->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_bin_ryg.vtk");
+	series3DWriter->Update();
 
 
 //erozja
-	//BallType::SizeType rad;
-	//rad[0] = 1;
-	//rad[1] = 1;
-	//int radius = 1;
-	//using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
-	//StructuringElementType structuringElement;
-	//structuringElement.SetRadius(radius);
-	//structuringElement.CreateStructuringElement();
+	BallType::SizeType rad;
+	rad[0] = 1;
+	rad[1] = 1;
+	int radius = 1;
+	using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
+	StructuringElementType structuringElement;
+	structuringElement.SetRadius(radius);
+	structuringElement.CreateStructuringElement();
 
-	//using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
-	//FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
-	//erodeFilter->SetInput(thresholder->GetOutput());
-	//erodeFilter->SetKernel(structuringElement);
-	//erodeFilter->SetBackgroundValue(0);
-	//erodeFilter->SetForegroundValue(1);
-	////for (size_t i = 0; i < 1; i++)
-	////{
-	//	erodeFilter->Update();
-	//	//image3D = erodeFilter->GetOutput();
-	////}
-	//
-	//series3DWriter->SetInput(erodeFilter->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_erode.vtk");
-	//series3DWriter->Update();
+	using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
+	FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
+	erodeFilter->SetInput(thresholder->GetOutput());
+	erodeFilter->SetKernel(structuringElement);
+	erodeFilter->SetBackgroundValue(0);
+	erodeFilter->SetForegroundValue(1);
+	erodeFilter->Update();
+
+	
+	series3DWriter->SetInput(erodeFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_erode_przyc.vtk");
+	series3DWriter->Update();
 	
 	
 	//otwarcie
