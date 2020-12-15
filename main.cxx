@@ -20,14 +20,18 @@
 #include<itkErodeObjectMorphologyImageFilter.h>
 #include<itkBinaryErodeImageFilter.h>
 #include<itkConnectedComponentImageFilter.h>
+#include<itkGradientMagnitudeImageFilter.h>
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
 using BallType = itk::BinaryBallStructuringElement<short, 3>;
+using InputPixelType = float;
+using OutputPixelType = float;
 
 using Image3DType = itk::Image<PixelType, 3>;
 using ImageIOType = itk::GDCMImageIO;
-
+using InputImageType = itk::Image< InputPixelType, 3 >;
+using OutputImageType = itk::Image< OutputPixelType, 3 >;
 using SeriesReaderType = itk::ImageSeriesReader<Image3DType>;
 using Series2DWriterType = itk::ImageSeriesWriter<Image3DType, ImageType>;
 using Series3DWriterType = itk::ImageSeriesWriter<Image3DType, Image3DType>;
@@ -154,7 +158,27 @@ try{
 	CCImageFilter->SetInput(image3D);
 	CCImageFilter->Update();
 	std::cout << CCImageFilter->GetObjectCount() << std::endl;
-	
+	//Magnitude
+
+	using FilterGradientType = itk::GradientMagnitudeImageFilter<Image3DType, Image3DType >;
+	FilterGradientType::Pointer filterG = FilterGradientType::New();
+	filterG->SetInput(image3D);
+	filterG->Update();
+
+	series3DWriter->SetInput(filterG->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_mag.vtk");
+	series3DWriter->Update();
+
+
+	thresholder->SetInput(filterG->GetOutput());
+	thresholder->SetInsideValue(1);
+	thresholder->SetOutsideValue(0);
+	thresholder->SetLowerThreshold(120);
+	thresholder->SetUpperThreshold(180);
+
+	series3DWriter->SetInput(thresholder->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_bin_po_mag.vtk");
+	series3DWriter->Update();
 	//series3DWriter->SetInput(image3D);
 
 	//writer->SetInput(openingFilter->GetOutput());
