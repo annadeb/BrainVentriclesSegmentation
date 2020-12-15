@@ -21,6 +21,7 @@
 #include<itkBinaryErodeImageFilter.h>
 #include<itkConnectedComponentImageFilter.h>
 #include<itkGradientMagnitudeImageFilter.h>
+#include <itkCropImageFilter.h>
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
@@ -97,17 +98,47 @@ try{
 	//reader->Update();
 	//image = reader->GetOutput();
 
-	//binaryzacja
-	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
-	FilterType::Pointer thresholder = FilterType::New();
-	thresholder->SetInput(image3D);
-	thresholder->SetInsideValue(1);
-	thresholder->SetOutsideValue(0);
-	thresholder->SetLowerThreshold(600);
-	
-	series3DWriter->SetInput(thresholder->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_bin.vtk");
+	//przycinanie
+	using CropImageFilterType = itk::CropImageFilter<Image3DType, Image3DType>;
+
+	CropImageFilterType::Pointer cropFilter = CropImageFilterType::New();
+	cropFilter->SetInput(image3D);
+	// The SetBoundaryCropSize( cropSize ) method specifies the size of
+	// the boundary to be cropped at both the uppper & lower ends of the
+	// image eg. cropSize pixels will be removed at both upper & lower
+	// extents
+
+	Image3DType::SizeType cropSize2;
+	cropSize2[0] = 90; //R
+	cropSize2[1] = 87; //A
+	cropSize2[2] = 42; //I
+
+	Image3DType::SizeType cropSize3;
+	cropSize3[0] = 85; //L
+	cropSize3[1] = 60; //P
+	cropSize3[2] = 0; //S
+
+	cropFilter->SetUpperBoundaryCropSize(cropSize3);
+
+	cropFilter->SetLowerBoundaryCropSize(cropSize2);
+
+	series3DWriter->SetInput(cropFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_crop.vtk");
 	series3DWriter->Update();
+
+	//binaryzacja
+	//using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
+	//FilterType::Pointer thresholder = FilterType::New();
+	//thresholder->SetInput(image3D);
+	//thresholder->SetInsideValue(1);
+	//thresholder->SetOutsideValue(0);
+	//thresholder->SetLowerThreshold(600);
+	//
+	//series3DWriter->SetInput(thresholder->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_bin.vtk");
+	//series3DWriter->Update();
+
+
 //erozja
 	//BallType::SizeType rad;
 	//rad[0] = 1;
@@ -133,8 +164,10 @@ try{
 	//series3DWriter->SetInput(erodeFilter->GetOutput());
 	//series3DWriter->SetFileName("..\\wyniki\\img3D_erode.vtk");
 	//series3DWriter->Update();
+	
+	
 	//otwarcie
-	BallType::SizeType rad;
+	/*BallType::SizeType rad;
 	rad[0] = 9;
 	rad[1] = 5;
 	int radius = 1;
@@ -157,28 +190,34 @@ try{
 
 	CCImageFilter->SetInput(image3D);
 	CCImageFilter->Update();
-	std::cout << CCImageFilter->GetObjectCount() << std::endl;
+	std::cout << CCImageFilter->GetObjectCount() << std::endl;*/
+	
+	
 	//Magnitude
 
-	using FilterGradientType = itk::GradientMagnitudeImageFilter<Image3DType, Image3DType >;
-	FilterGradientType::Pointer filterG = FilterGradientType::New();
-	filterG->SetInput(image3D);
-	filterG->Update();
+	//using FilterGradientType = itk::GradientMagnitudeImageFilter<Image3DType, Image3DType >;
+	//FilterGradientType::Pointer filterG = FilterGradientType::New();
+	//filterG->SetInput(image3D);
+	//filterG->Update();
 
-	series3DWriter->SetInput(filterG->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_mag.vtk");
-	series3DWriter->Update();
+	//series3DWriter->SetInput(filterG->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_mag.vtk");
+	//series3DWriter->Update();
 
 
-	thresholder->SetInput(filterG->GetOutput());
-	thresholder->SetInsideValue(1);
-	thresholder->SetOutsideValue(0);
-	thresholder->SetLowerThreshold(120);
-	thresholder->SetUpperThreshold(180);
+	//thresholder->SetInput(filterG->GetOutput());
+	//thresholder->SetInsideValue(1);
+	//thresholder->SetOutsideValue(0);
+	//thresholder->SetLowerThreshold(120);
+	//thresholder->SetUpperThreshold(180);
 
-	series3DWriter->SetInput(thresholder->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_bin_po_mag.vtk");
-	series3DWriter->Update();
+	//series3DWriter->SetInput(thresholder->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_bin_po_mag.vtk");
+	//series3DWriter->Update();
+
+
+
+
 	//series3DWriter->SetInput(image3D);
 
 	//writer->SetInput(openingFilter->GetOutput());
