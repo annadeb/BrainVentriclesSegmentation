@@ -22,6 +22,7 @@
 #include<itkConnectedComponentImageFilter.h>
 #include<itkGradientMagnitudeImageFilter.h>
 #include <itkCropImageFilter.h>
+#include<itkConnectedThresholdImageFilter.h>
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
@@ -43,6 +44,9 @@ using WriterType = itk::ImageFileWriter<ImageType>;
 
 using ConnectedComponent = itk::ConnectedComponentImageFilter<Image3DType, Image3DType, Image3DType>;
 using NumSeriesFileNames = itk::NumericSeriesFileNames;
+
+using ConnectedThreshold = itk::ConnectedThresholdImageFilter<Image3DType, Image3DType>;
+
 int main() // glowna funkcja programu
 {
 try{
@@ -162,7 +166,20 @@ try{
 	series3DWriter->SetFileName("..\\wyniki\\img3D_erode_przyc.vtk");
 	series3DWriter->Update();
 	
+	//rozrost 
+	ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
+	connThres->SetInput(image3D);
+	connThres->SetConnectivity(ConnectedThreshold::FullConnectivity);
+	connThres->SetLower(0);
+	connThres->SetUpper(200);
+	ConnectedThreshold::IndexType seed1;
+	seed1[0] = 129; seed1[1] = 136; seed1[2] = 48;
+	connThres->SetSeed(seed1);
+	connThres->Update();
 	
+	series3DWriter->SetInput(connThres->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\rozrost.vtk");
+	series3DWriter->Update();
 	//otwarcie
 	/*BallType::SizeType rad;
 	rad[0] = 9;
