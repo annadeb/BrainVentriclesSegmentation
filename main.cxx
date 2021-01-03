@@ -23,12 +23,18 @@
 #include<itkGradientMagnitudeImageFilter.h>
 #include <itkCropImageFilter.h>
 #include<itkConnectedThresholdImageFilter.h>
-
+#include<itkBinaryImageToLabelMapFilter.h>
+#include<itkLabelMapToLabelImageFilter.h>
+#include<itkLabelStatisticsImageFilter.h>
+#include<itkLabelShapeKeepNObjectsImageFilter.h>
+#include<itkRescaleIntensityImageFilter.h>
+#include<itkBinaryFillholeImageFilter.h>
+#include<itkVotingBinaryIterativeHoleFillingImageFilter.h>
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
 using BallType = itk::BinaryBallStructuringElement<short, 3>;
 using InputPixelType = float;
-using OutputPixelType = float;
+using OutputPixelType = int;
 
 using Image3DType = itk::Image<PixelType, 3>;
 using ImageIOType = itk::GDCMImageIO;
@@ -59,6 +65,8 @@ try{
 	itk::GDCMSeriesFileNames::Pointer namesGen = itk::GDCMSeriesFileNames::New();
 	NumSeriesFileNames::Pointer numSeriesFileNames = NumSeriesFileNames::New();
 	Image3DType::Pointer image3D = Image3DType::New();
+	Image3DType::Pointer image3D_bin = Image3DType::New();
+
 	ImageIOType::Pointer dicomIO = ImageIOType::New();
 	Writer3Dtype::Pointer writer3D = Writer3Dtype::New();
 	Series3DWriterType::Pointer series3DWriter = Series3DWriterType::New();
@@ -112,62 +120,176 @@ try{
 	// image eg. cropSize pixels will be removed at both upper & lower
 	// extents
 
-	Image3DType::SizeType cropSize2;
-	cropSize2[0] = 90; //R
-	cropSize2[1] = 87; //A
-	cropSize2[2] = 42; //I
+	//Image3DType::SizeType cropSize2;
+	//cropSize2[0] = 90; //R
+	//cropSize2[1] = 87; //A
+	//cropSize2[2] = 42; //I
 
-	Image3DType::SizeType cropSize3;
-	cropSize3[0] = 85; //L
-	cropSize3[1] = 60; //P
-	cropSize3[2] = 0; //S
+	//Image3DType::SizeType cropSize3;
+	//cropSize3[0] = 85; //L
+	//cropSize3[1] = 60; //P
+	//cropSize3[2] = 0; //S
 
-	cropFilter->SetUpperBoundaryCropSize(cropSize3);
+	//cropFilter->SetUpperBoundaryCropSize(cropSize3);
 
-	cropFilter->SetLowerBoundaryCropSize(cropSize2);
+	//cropFilter->SetLowerBoundaryCropSize(cropSize2);
 
-	series3DWriter->SetInput(cropFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_crop.vtk");
-	series3DWriter->Update();
-
-	//binaryzacja
+	//series3DWriter->SetInput(cropFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_crop.vtk");
+	//series3DWriter->Update(); 
+		//binaryzacja
 	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
 	FilterType::Pointer thresholder = FilterType::New();
-	thresholder->SetInput(cropFilter->GetOutput());
+	thresholder->SetInput(image3D);
 	thresholder->SetInsideValue(1);
 	thresholder->SetOutsideValue(0);
-	thresholder->SetLowerThreshold(600);
-	
+	thresholder->SetLowerThreshold(300);
+
 	series3DWriter->SetInput(thresholder->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_bin_ryg.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\img3D_bin_calosc.vtk");
+	series3DWriter->Update();
+	image3D_bin = thresholder->GetOutput();
+	//zalewanie obszaru
+	using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
+
+	ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
+	connected->SetInput(image3D_bin);
+	connected->SetBackgroundValue(1);
+		connected->Update();
+
+	std::cout << "Number of objects: " << connected->GetObjectCount() << std::endl;
+	series3DWriter->SetInput(connected->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_zalane.vtk");
 	series3DWriter->Update();
 
+
+	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
+
+
+	//FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
+	//fillHoleFilter->SetInput(image3D_bin);
+	//fillHoleFilter->SetForegroundValue(1);
+	//fillHoleFilter->SetFullyConnected(1);
+	//fillHoleFilter->SetCoordinateTolerance(100);
+	//fillHoleFilter->Update();
+	//series3DWriter->SetInput(fillHoleFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
+	//series3DWriter->Update();
+
+	using FillholeFilterType = itk::VotingBinaryIterativeHoleFillingImageFilter<Image3DType>;
+	FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
+	Image3DType::SizeType a;
+	a[0] = 10; //R
+a[1] = 10; //A
+a[2] = 10; //I
+	fillHoleFilter->SetInput(image3D_bin);
+	fillHoleFilter->SetForegroundValue(1);
+	fillHoleFilter->SetBackgroundValue(0);
+	fillHoleFilter->SetRadius(a);
+	fillHoleFilter->SetMaximumNumberOfIterations(1);
+	fillHoleFilter->SetMajorityThreshold(2);
+	//fillHoleFilter->SetFullyConnected(1);
+	//fillHoleFilter->SetCoordinateTolerance(100);
+	fillHoleFilter->Update();
+	series3DWriter->SetInput(fillHoleFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
+	series3DWriter->Update();
+//	using LabelShapeKeepNObjectsImageFilterType = itk::LabelShapeKeepNObjectsImageFilter<OutputImageType>;
+//	LabelShapeKeepNObjectsImageFilterType::Pointer labelShapeKeepNObjectsImageFilter =
+//		LabelShapeKeepNObjectsImageFilterType::New();
+//	labelShapeKeepNObjectsImageFilter->SetInput(connected->GetOutput());
+//	labelShapeKeepNObjectsImageFilter->SetBackgroundValue(0);
+//	labelShapeKeepNObjectsImageFilter->SetNumberOfObjects(1);
+//	labelShapeKeepNObjectsImageFilter->SetAttribute(
+//		LabelShapeKeepNObjectsImageFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+//	
+//	using RescaleFilterType = itk::RescaleIntensityImageFilter<OutputImageType, Image3DType>;
+//	RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+//	rescaleFilter->SetOutputMinimum(0);
+//	rescaleFilter->SetOutputMaximum(itk::NumericTraits<PixelType>::max());
+//	rescaleFilter->SetInput(labelShapeKeepNObjectsImageFilter->GetOutput());
+//
+//#ifdef ENABLE_QUICKVIEW
+//	QuickView viewer;
+//	viewer.AddImage(image3D, true, itksys::SystemTools::GetFilenameName(argv[1]));
+//
+//	std::stringstream desc;
+//	desc << "Largest object of " << connected->GetObjectCount() << " objects";
+//	viewer.AddImage(rescaleFilter->GetOutput(), true, desc.str());
+//
+//	viewer.Visualize();
+//#endif
+//
+//	//
+//	using BinaryImageToLabelMapFilterType = itk::BinaryImageToLabelMapFilter<Image3DType>;
+//	BinaryImageToLabelMapFilterType::Pointer binaryImageToLabelMapFilter = BinaryImageToLabelMapFilterType::New();
+//	binaryImageToLabelMapFilter->SetInput(image3D_bin);
+//	binaryImageToLabelMapFilter->Update();
+//
+//	using LabelMapToLabelImageFilterType =
+//		itk::LabelMapToLabelImageFilter<BinaryImageToLabelMapFilterType::OutputImageType, Image3DType>;
+//	LabelMapToLabelImageFilterType::Pointer labelMapToLabelImageFilter = LabelMapToLabelImageFilterType::New();
+//	labelMapToLabelImageFilter->SetInput(binaryImageToLabelMapFilter->GetOutput());
+//	labelMapToLabelImageFilter->Update();
+//
+//	using LabelStatisticsImageFilterType = itk::LabelStatisticsImageFilter<Image3DType, Image3DType>;
+//	LabelStatisticsImageFilterType::Pointer labelStatisticsImageFilter = LabelStatisticsImageFilterType::New();
+//	labelStatisticsImageFilter->SetLabelInput(labelMapToLabelImageFilter->GetOutput());
+//	labelStatisticsImageFilter->SetInput(image3D_bin);
+//	labelStatisticsImageFilter->Update();
+//
+//	std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
+//	std::cout << std::endl;
+//
+//	using LabelPixelType = LabelStatisticsImageFilterType::LabelPixelType;
+//
+//	for (auto vIt = labelStatisticsImageFilter->GetValidLabelValues().begin();
+//		vIt != labelStatisticsImageFilter->GetValidLabelValues().end();
+//		++vIt)
+//	{
+//		if (labelStatisticsImageFilter->HasLabel(*vIt))
+//		{
+//			LabelPixelType labelValue = *vIt;
+//			std::cout << "min: " << labelStatisticsImageFilter->GetMinimum(labelValue) << std::endl;
+//			std::cout << "max: " << labelStatisticsImageFilter->GetMaximum(labelValue) << std::endl;
+//			std::cout << "median: " << labelStatisticsImageFilter->GetMedian(labelValue) << std::endl;
+//			std::cout << "mean: " << labelStatisticsImageFilter->GetMean(labelValue) << std::endl;
+//			std::cout << "sigma: " << labelStatisticsImageFilter->GetSigma(labelValue) << std::endl;
+//			std::cout << "variance: " << labelStatisticsImageFilter->GetVariance(labelValue) << std::endl;
+//			std::cout << "sum: " << labelStatisticsImageFilter->GetSum(labelValue) << std::endl;
+//			std::cout << "count: " << labelStatisticsImageFilter->GetCount(labelValue) << std::endl;
+//			// std::cout << "box: " << labelStatisticsImageFilter->GetBoundingBox( labelValue ) << std::endl; // can't output
+//			// a box
+//			std::cout << "region: " << labelStatisticsImageFilter->GetRegion(labelValue) << std::endl;
+//			std::cout << std::endl << std::endl;
+//		}
+//	}
 
 //erozja
-	BallType::SizeType rad;
-	rad[0] = 1;
-	rad[1] = 1;
-	int radius = 1;
-	using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
-	StructuringElementType structuringElement;
-	structuringElement.SetRadius(radius);
-	structuringElement.CreateStructuringElement();
+	//BallType::SizeType rad;
+	//rad[0] = 1;
+	//rad[1] = 1;
+	//int radius = 1;
+	//using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
+	//StructuringElementType structuringElement;
+	//structuringElement.SetRadius(radius);
+	//structuringElement.CreateStructuringElement();
 
-	using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
-	FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
-	erodeFilter->SetInput(thresholder->GetOutput());
-	erodeFilter->SetKernel(structuringElement);
-	erodeFilter->SetBackgroundValue(0);
-	erodeFilter->SetForegroundValue(1);
-	erodeFilter->Update();
+	//using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
+	//FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
+	//erodeFilter->SetInput(thresholder->GetOutput());
+	//erodeFilter->SetKernel(structuringElement);
+	//erodeFilter->SetBackgroundValue(0);
+	//erodeFilter->SetForegroundValue(1);
+	//erodeFilter->Update();
 
-	
-	series3DWriter->SetInput(erodeFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_erode_przyc.vtk");
-	series3DWriter->Update();
+	//
+	//series3DWriter->SetInput(erodeFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_erode_przyc.vtk");
+	//series3DWriter->Update();
 	
 	//rozrost 
-	ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
+	/*ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
 	connThres->SetInput(image3D);
 	connThres->SetConnectivity(ConnectedThreshold::FullConnectivity);
 	connThres->SetLower(0);
@@ -179,7 +301,10 @@ try{
 	
 	series3DWriter->SetInput(connThres->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\rozrost.vtk");
-	series3DWriter->Update();
+	series3DWriter->Update();*/
+	///spróbuj Confidence Filter filtr medianowy 
+
+
 	//otwarcie
 	/*BallType::SizeType rad;
 	rad[0] = 9;
