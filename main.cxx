@@ -19,6 +19,7 @@
 #include<itkBinaryBallStructuringElement.h>
 #include<itkErodeObjectMorphologyImageFilter.h>
 #include<itkBinaryErodeImageFilter.h>
+#include<itkBinaryDilateImageFilter.h>
 #include<itkConnectedComponentImageFilter.h>
 #include<itkGradientMagnitudeImageFilter.h>
 #include <itkCropImageFilter.h>
@@ -30,6 +31,7 @@
 #include<itkRescaleIntensityImageFilter.h>
 #include<itkBinaryFillholeImageFilter.h>
 #include<itkVotingBinaryIterativeHoleFillingImageFilter.h>
+#include<itkMultiplyImageFilter.h>
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
 using BallType = itk::BinaryBallStructuringElement<short, 3>;
@@ -150,7 +152,7 @@ try{
 	series3DWriter->Update();
 	image3D_bin = thresholder->GetOutput();
 	//zalewanie obszaru
-	using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
+	/*using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
 
 	ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
 	connected->SetInput(image3D_bin);
@@ -160,9 +162,61 @@ try{
 	std::cout << "Number of objects: " << connected->GetObjectCount() << std::endl;
 	series3DWriter->SetInput(connected->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\img3D_zalane.vtk");
-	series3DWriter->Update();
+	series3DWriter->Update();*/
 
+	//dylatacja
+	BallType::SizeType rad;
+	rad[0] = 8;
+rad[1] = 8;
+rad[2] = 8;
+int radius = 1;
+using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
+StructuringElementType structuringElement;
+structuringElement.SetRadius(rad);
+structuringElement.CreateStructuringElement();
 
+using FilterDilateType = itk::BinaryDilateImageFilter<Image3DType, Image3DType, StructuringElementType>;
+FilterDilateType::Pointer dilateFilter = FilterDilateType::New();
+dilateFilter->SetInput(image3D_bin);
+dilateFilter->SetKernel(structuringElement);
+dilateFilter->SetBackgroundValue(0);
+dilateFilter->SetForegroundValue(1);
+dilateFilter->Update();
+
+series3DWriter->SetInput(dilateFilter->GetOutput());
+series3DWriter->SetFileName("..\\wyniki\\img3D_dilate.vtk");
+series3DWriter->Update();
+
+//erozja 
+rad[0] = 38;
+rad[1] = 38;
+rad[2] = 38;
+structuringElement.SetRadius(rad);
+structuringElement.CreateStructuringElement();
+
+using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
+FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
+erodeFilter->SetInput(dilateFilter->GetOutput());
+erodeFilter->SetKernel(structuringElement);
+erodeFilter->SetBackgroundValue(0);
+erodeFilter->SetForegroundValue(1);
+erodeFilter->Update();
+
+series3DWriter->SetInput(erodeFilter->GetOutput());
+series3DWriter->SetFileName("..\\wyniki\\img3D_erozja.vtk");
+series3DWriter->Update();
+
+//mno¿enie
+//image3D* erodeFilter->GetOutput();
+using MultiplyType = itk::MultiplyImageFilter< Image3DType, Image3DType, Image3DType>;
+MultiplyType::Pointer multiply = MultiplyType::New();
+multiply->SetInput1(image3D);
+multiply->SetInput2(erodeFilter->GetOutput());
+multiply->Update();
+
+series3DWriter->SetInput(multiply->GetOutput());
+series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie.vtk");
+series3DWriter->Update();
 	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
 
 
@@ -176,24 +230,26 @@ try{
 	//series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
 	//series3DWriter->Update();
 
-	using FillholeFilterType = itk::VotingBinaryIterativeHoleFillingImageFilter<Image3DType>;
-	FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
-	Image3DType::SizeType a;
-	a[0] = 10; //R
-a[1] = 10; //A
-a[2] = 10; //I
-	fillHoleFilter->SetInput(image3D_bin);
-	fillHoleFilter->SetForegroundValue(1);
-	fillHoleFilter->SetBackgroundValue(0);
-	fillHoleFilter->SetRadius(a);
-	fillHoleFilter->SetMaximumNumberOfIterations(1);
-	fillHoleFilter->SetMajorityThreshold(2);
+//	using FillholeFilterType = itk::VotingBinaryIterativeHoleFillingImageFilter<Image3DType>;
+//	FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
+//	Image3DType::SizeType a;
+//	a[0] = 10; //R
+//a[1] = 10; //A
+//a[2] = 10; //I
+//	fillHoleFilter->SetInput(image3D_bin);
+//	fillHoleFilter->SetForegroundValue(1);
+//	fillHoleFilter->SetBackgroundValue(0);
+//	fillHoleFilter->SetRadius(a);
+//	fillHoleFilter->SetMaximumNumberOfIterations(1);
+//	fillHoleFilter->SetMajorityThreshold(2);
 	//fillHoleFilter->SetFullyConnected(1);
 	//fillHoleFilter->SetCoordinateTolerance(100);
-	fillHoleFilter->Update();
-	series3DWriter->SetInput(fillHoleFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
-	series3DWriter->Update();
+	//fillHoleFilter->Update();
+	//series3DWriter->SetInput(fillHoleFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
+	//series3DWriter->Update();
+
+
 //	using LabelShapeKeepNObjectsImageFilterType = itk::LabelShapeKeepNObjectsImageFilter<OutputImageType>;
 //	LabelShapeKeepNObjectsImageFilterType::Pointer labelShapeKeepNObjectsImageFilter =
 //		LabelShapeKeepNObjectsImageFilterType::New();
