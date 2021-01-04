@@ -32,6 +32,9 @@
 #include<itkBinaryFillholeImageFilter.h>
 #include<itkVotingBinaryIterativeHoleFillingImageFilter.h>
 #include<itkMultiplyImageFilter.h>
+#include<itkMedianImageFilter.h>
+#include<itkMinimumMaximumImageCalculator.h>
+
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
 using BallType = itk::BinaryBallStructuringElement<short, 3>;
@@ -169,7 +172,6 @@ try{
 	rad[0] = 8;
 rad[1] = 8;
 rad[2] = 8;
-int radius = 1;
 using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
 StructuringElementType structuringElement;
 structuringElement.SetRadius(rad);
@@ -217,37 +219,28 @@ multiply->Update();
 series3DWriter->SetInput(multiply->GetOutput());
 series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie.vtk");
 series3DWriter->Update();
-	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
 
+//filter medianowy 
+using MedianFilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
+MedianFilterType::Pointer medianFilter = MedianFilterType::New();
+MedianFilterType::InputSizeType radius;
+radius.Fill(1);
+medianFilter->SetRadius(radius);
+medianFilter->SetInput(multiply->GetOutput());	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
+series3DWriter->SetInput(medianFilter->GetOutput());
+series3DWriter->SetFileName("..\\wyniki\\img3D_filtr_medianowy.vtk");
+series3DWriter->Update();
 
-	//FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
-	//fillHoleFilter->SetInput(image3D_bin);
-	//fillHoleFilter->SetForegroundValue(1);
-	//fillHoleFilter->SetFullyConnected(1);
-	//fillHoleFilter->SetCoordinateTolerance(100);
-	//fillHoleFilter->Update();
-	//series3DWriter->SetInput(fillHoleFilter->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
-	//series3DWriter->Update();
+//binaryzacja -> poszukiwanie max
+thresholder->SetInput(multiply->GetOutput());
+thresholder->SetInsideValue(1);
+thresholder->SetOutsideValue(0);
+thresholder->SetLowerThreshold(600);
+thresholder->SetUpperThreshold(800);
+series3DWriter->SetInput(thresholder->GetOutput());
+series3DWriter->SetFileName("..\\wyniki\\img3D_bin_komory.vtk");
+series3DWriter->Update();
 
-//	using FillholeFilterType = itk::VotingBinaryIterativeHoleFillingImageFilter<Image3DType>;
-//	FillholeFilterType::Pointer fillHoleFilter = FillholeFilterType::New();
-//	Image3DType::SizeType a;
-//	a[0] = 10; //R
-//a[1] = 10; //A
-//a[2] = 10; //I
-//	fillHoleFilter->SetInput(image3D_bin);
-//	fillHoleFilter->SetForegroundValue(1);
-//	fillHoleFilter->SetBackgroundValue(0);
-//	fillHoleFilter->SetRadius(a);
-//	fillHoleFilter->SetMaximumNumberOfIterations(1);
-//	fillHoleFilter->SetMajorityThreshold(2);
-	//fillHoleFilter->SetFullyConnected(1);
-	//fillHoleFilter->SetCoordinateTolerance(100);
-	//fillHoleFilter->Update();
-	//series3DWriter->SetInput(fillHoleFilter->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_fillHole.vtk");
-	//series3DWriter->Update();
 
 
 //	using LabelShapeKeepNObjectsImageFilterType = itk::LabelShapeKeepNObjectsImageFilter<OutputImageType>;
