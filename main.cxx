@@ -34,6 +34,7 @@
 #include<itkMedianImageFilter.h>
 #include<itkMinimumMaximumImageCalculator.h>
 #include<itkBinaryMorphologicalOpeningImageFilter.h>
+#include<itkConfidenceConnectedImageFilter.h>
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
@@ -229,6 +230,30 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//pierwszy niezerowy punkt obrazu od czubka g³owy w dó³
+		//TODO
+
+		//rozrost
+		using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
+		ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
+		confidenceConnected->SetInput(image3D);
+		confidenceConnected->SetMultiplier(1.5);
+		confidenceConnected->SetNumberOfIterations(5);
+		confidenceConnected->SetReplaceValue(255);
+		Image3DType::IndexType index;
+
+		index[0] = 168;//152;
+		index[1] = 152;// 168;
+		index[2] = 48;// 48;
+
+		confidenceConnected->SetSeed(index);
+		confidenceConnected->SetInitialNeighborhoodRadius(2);
+		confidenceConnected->Update();
+
+		series3DWriter->SetInput(confidenceConnected->GetOutput());
+		series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost.vtk");
+		series3DWriter->Update();
+
+
 
 		//	using LabelShapeKeepNObjectsImageFilterType = itk::LabelShapeKeepNObjectsImageFilter<OutputImageType>;
 		//	LabelShapeKeepNObjectsImageFilterType::Pointer labelShapeKeepNObjectsImageFilter =
@@ -257,27 +282,27 @@ int main() // glowna funkcja programu
 		//#endif
 		//
 		//	//
-			using BinaryImageToLabelMapFilterType = itk::BinaryImageToLabelMapFilter<Image3DType>;
-			BinaryImageToLabelMapFilterType::Pointer binaryImageToLabelMapFilter = BinaryImageToLabelMapFilterType::New();
-			binaryImageToLabelMapFilter->SetInput(openFilter->GetOutput());
-			binaryImageToLabelMapFilter->Update();
-		//
-			using LabelMapToLabelImageFilterType =
-				itk::LabelMapToLabelImageFilter<BinaryImageToLabelMapFilterType::OutputImageType, Image3DType>;
-			LabelMapToLabelImageFilterType::Pointer labelMapToLabelImageFilter = LabelMapToLabelImageFilterType::New();
-			labelMapToLabelImageFilter->SetInput(binaryImageToLabelMapFilter->GetOutput());
-			labelMapToLabelImageFilter->Update();
-		//
-			using LabelStatisticsImageFilterType = itk::LabelStatisticsImageFilter<Image3DType, Image3DType>;
-			LabelStatisticsImageFilterType::Pointer labelStatisticsImageFilter = LabelStatisticsImageFilterType::New();
-			labelStatisticsImageFilter->SetLabelInput(labelMapToLabelImageFilter->GetOutput());
-			labelStatisticsImageFilter->SetInput(openFilter->GetOutput());
-			labelStatisticsImageFilter->Update();
-			labelStatisticsImageFilter->GetRegion(labelStatisticsImageFilter->GetValidLabelValues()[0]);
+		//	using BinaryImageToLabelMapFilterType = itk::BinaryImageToLabelMapFilter<Image3DType>;
+		//	BinaryImageToLabelMapFilterType::Pointer binaryImageToLabelMapFilter = BinaryImageToLabelMapFilterType::New();
+		//	binaryImageToLabelMapFilter->SetInput(openFilter->GetOutput());
+		//	binaryImageToLabelMapFilter->Update();
+		////
+		//	using LabelMapToLabelImageFilterType =
+		//		itk::LabelMapToLabelImageFilter<BinaryImageToLabelMapFilterType::OutputImageType, Image3DType>;
+		//	LabelMapToLabelImageFilterType::Pointer labelMapToLabelImageFilter = LabelMapToLabelImageFilterType::New();
+		//	labelMapToLabelImageFilter->SetInput(binaryImageToLabelMapFilter->GetOutput());
+		//	labelMapToLabelImageFilter->Update();
+		////
+		//	using LabelStatisticsImageFilterType = itk::LabelStatisticsImageFilter<Image3DType, Image3DType>;
+		//	LabelStatisticsImageFilterType::Pointer labelStatisticsImageFilter = LabelStatisticsImageFilterType::New();
+		//	labelStatisticsImageFilter->SetLabelInput(labelMapToLabelImageFilter->GetOutput());
+		//	labelStatisticsImageFilter->SetInput(openFilter->GetOutput());
+		//	labelStatisticsImageFilter->Update();
+		//	labelStatisticsImageFilter->GetRegion(labelStatisticsImageFilter->GetValidLabelValues()[0]);
 
-		
-			std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
-			std::cout << std::endl;
+		//
+		//	std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
+		//	std::cout << std::endl;
 		//
 		//	using LabelPixelType = LabelStatisticsImageFilterType::LabelPixelType;
 		//
@@ -303,28 +328,7 @@ int main() // glowna funkcja programu
 		//		}
 		//	}
 
-		//erozja
-			//BallType::SizeType rad;
-			//rad[0] = 1;
-			//rad[1] = 1;
-			//int radius = 1;
-			//using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
-			//StructuringElementType structuringElement;
-			//structuringElement.SetRadius(radius);
-			//structuringElement.CreateStructuringElement();
-
-			//using FilterErodeType = itk::BinaryErodeImageFilter<Image3DType, Image3DType, StructuringElementType>;
-			//FilterErodeType::Pointer erodeFilter = FilterErodeType::New();
-			//erodeFilter->SetInput(thresholder->GetOutput());
-			//erodeFilter->SetKernel(structuringElement);
-			//erodeFilter->SetBackgroundValue(0);
-			//erodeFilter->SetForegroundValue(1);
-			//erodeFilter->Update();
-
-			//
-			//series3DWriter->SetInput(erodeFilter->GetOutput());
-			//series3DWriter->SetFileName("..\\wyniki\\img3D_erode_przyc.vtk");
-			//series3DWriter->Update();
+		
 
 			//rozrost 
 			/*ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
