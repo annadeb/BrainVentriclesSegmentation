@@ -35,6 +35,10 @@
 #include<itkMinimumMaximumImageCalculator.h>
 #include<itkBinaryMorphologicalOpeningImageFilter.h>
 #include<itkConfidenceConnectedImageFilter.h>
+//#include<itkCurvatureFlowImageFilter.h>
+#include<itkNeighborhoodConnectedImageFilter.h>
+
+
 
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
@@ -233,24 +237,64 @@ int main() // glowna funkcja programu
 		//TODO
 
 		//rozrost
-		using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
-		ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
-		confidenceConnected->SetInput(image3D);
-		confidenceConnected->SetMultiplier(1.5);
-		confidenceConnected->SetNumberOfIterations(5);
-		confidenceConnected->SetReplaceValue(255);
-		Image3DType::IndexType index;
+	/*	using CurvatureFlowImageFilterType =itk::CurvatureFlowImageFilter< Image3DType, Image3DType >;
+		CurvatureFlowImageFilterType::Pointer smoothing =CurvatureFlowImageFilterType::New();
+		smoothing->SetInput(image3D);
+		smoothing->SetNumberOfIterations(5);
+		smoothing->SetTimeStep(0.125);*/
 
-		index[0] = 168;//152;
-		index[1] = 152;// 168;
+		//using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
+		//ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
+		//confidenceConnected->SetInput(image3D);
+		//confidenceConnected->SetMultiplier(1.2);
+		//confidenceConnected->SetNumberOfIterations(1);
+		//confidenceConnected->SetReplaceValue(1);
+		//confidenceConnected->SetInitialNeighborhoodRadius(2);
+
+		/*using ConnectedFilterType =	itk::ConnectedThresholdImageFilter< Image3DType,Image3DType >;
+		ConnectedFilterType::Pointer connectedThreshold = ConnectedFilterType::New();
+		connectedThreshold->SetInput(image3D);
+		connectedThreshold->SetLower(500);
+		connectedThreshold->SetConnectivity(ConnectedFilterType::FullConnectivity);
+		connectedThreshold->SetUpper(820);
+		connectedThreshold->SetReplaceValue(255);
+		connectedThreshold->SetSeed(index);*/
+
+		using ConnectedFilterType =	itk::NeighborhoodConnectedImageFilter<Image3DType, Image3DType >;
+		ConnectedFilterType::Pointer neighborhoodConnected	= ConnectedFilterType::New();
+		neighborhoodConnected->SetInput(image3D);
+		neighborhoodConnected->SetLower(500);
+		neighborhoodConnected->SetUpper(820);
+
+		Image3DType::SizeType radius3D;
+
+		radius3D[0] = 2;   // two pixels along X
+		radius3D[1] = 2;   // two pixels along Y
+		radius3D[2] = 2;
+
+		neighborhoodConnected->SetRadius(radius3D);
+		
+		neighborhoodConnected->SetReplaceValue(255);
+
+		ConnectedFilterType::IndexType index;
+
+		/*Image3DType::RegionType region = image3D->GetLargestPossibleRegion();
+		Image3DType::SizeType size = region.GetSize();
+		std::cout << size << std::endl;*/
+
+		index[0] = 152;//129;//152;
+		index[1] = 168;//129;// 168;
 		index[2] = 48;// 48;
+		neighborhoodConnected->SetSeed(index);
 
-		confidenceConnected->SetSeed(index);
+		/*confidenceConnected->SetSeed(index);
 		confidenceConnected->SetInitialNeighborhoodRadius(2);
-		confidenceConnected->Update();
+		confidenceConnected->Update();*/
 
-		series3DWriter->SetInput(confidenceConnected->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost.vtk");
+		
+
+		series3DWriter->SetInput(neighborhoodConnected->GetOutput());
+		series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
 		series3DWriter->Update();
 
 
