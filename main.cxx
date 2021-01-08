@@ -43,19 +43,21 @@
 using PixelType = signed short;
 using ImageType = itk::Image<PixelType, 2>;
 using BallType = itk::BinaryBallStructuringElement<short, 3>;
-using InputPixelType = float;
-using OutputPixelType = int;
+//using InputPixelType = float;
+//using OutputPixelType = int;
 
 using Image3DType = itk::Image<PixelType, 3>;
 using ImageIOType = itk::GDCMImageIO;
-using InputImageType = itk::Image< InputPixelType, 3 >;
-using OutputImageType = itk::Image< OutputPixelType, 3 >;
+//using InputImageType = itk::Image< InputPixelType, 3 >;
+//using OutputImageType = itk::Image< OutputPixelType, 3 >;
 using SeriesReaderType = itk::ImageSeriesReader<Image3DType>;
 using Series2DWriterType = itk::ImageSeriesWriter<Image3DType, ImageType>;
 using Series3DWriterType = itk::ImageSeriesWriter<Image3DType, Image3DType>;
 
 using Writer3Dtype = itk::ImageFileWriter<Image3DType>;
-using ReaderType = itk::ImageFileReader<ImageType>;
+using ReaderType = itk::ImageFileReader<ImageType>; 
+using Reader3DType = itk::ImageFileReader<ImageType>;
+
 using WriterType = itk::ImageFileWriter<ImageType>;
 
 using ConnectedComponent = itk::ConnectedComponentImageFilter<Image3DType, Image3DType, Image3DType>;
@@ -76,6 +78,7 @@ int main() // glowna funkcja programu
 		NumSeriesFileNames::Pointer numSeriesFileNames = NumSeriesFileNames::New();
 		Image3DType::Pointer image3D = Image3DType::New();
 		Image3DType::Pointer image3D_bin = Image3DType::New();
+		Image3DType::Pointer image3D_mnozenie = Image3DType::New();
 
 		ImageIOType::Pointer dicomIO = ImageIOType::New();
 		Writer3Dtype::Pointer writer3D = Writer3Dtype::New();
@@ -189,22 +192,22 @@ int main() // glowna funkcja programu
 		MultiplyType::Pointer multiply = MultiplyType::New();
 		multiply->SetInput1(image3D);
 		multiply->SetInput2(erodeFilter->GetOutput());
+		image3D_mnozenie = multiply->GetOutput();;
 		multiply->Update();
-
-		series3DWriter->SetInput(multiply->GetOutput());
+		series3DWriter->SetInput(image3D_mnozenie);
 		series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie.vtk");
 		series3DWriter->Update();
 
 		//filter medianowy 
-		using MedianFilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
-		MedianFilterType::Pointer medianFilter = MedianFilterType::New();
-		MedianFilterType::InputSizeType radius;
-		radius.Fill(1);
-		medianFilter->SetRadius(radius);
-		medianFilter->SetInput(multiply->GetOutput());	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
-		series3DWriter->SetInput(medianFilter->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_filtr_medianowy.vtk");
-		series3DWriter->Update();
+		//using MedianFilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
+		//MedianFilterType::Pointer medianFilter = MedianFilterType::New();
+		//MedianFilterType::InputSizeType radius;
+		//radius.Fill(1);
+		//medianFilter->SetRadius(radius);
+		//medianFilter->SetInput(multiply->GetOutput());	//using FillholeFilterType = itk::BinaryFillholeImageFilter<Image3DType>;
+		//series3DWriter->SetInput(medianFilter->GetOutput());
+		//series3DWriter->SetFileName("..\\wyniki\\img3D_filtr_medianowy.vtk");
+		//series3DWriter->Update();
 
 		//binaryzacja -> poszukiwanie max
 		thresholder->SetInput(multiply->GetOutput());
@@ -242,50 +245,82 @@ int main() // glowna funkcja programu
 		smoothing->SetInput(image3D);
 		smoothing->SetNumberOfIterations(5);
 		smoothing->SetTimeStep(0.125);*/
+	
 
-		//using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
-		//ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
-		//confidenceConnected->SetInput(image3D);
-		//confidenceConnected->SetMultiplier(1.2);
+		using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
+		ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
+		confidenceConnected->SetInput(image3D); // daæ tu obraz po mno¿eniu zeby bylo przyciête
+		//confidenceConnected->SetMultiplier(0.57);  //Multiplier = 0.57, iteracje 1
 		//confidenceConnected->SetNumberOfIterations(1);
-		//confidenceConnected->SetReplaceValue(1);
-		//confidenceConnected->SetInitialNeighborhoodRadius(2);
-
-		/*using ConnectedFilterType =	itk::ConnectedThresholdImageFilter< Image3DType,Image3DType >;
-		ConnectedFilterType::Pointer connectedThreshold = ConnectedFilterType::New();
-		connectedThreshold->SetInput(image3D);
-		connectedThreshold->SetLower(500);
-		connectedThreshold->SetConnectivity(ConnectedFilterType::FullConnectivity);
-		connectedThreshold->SetUpper(820);
-		connectedThreshold->SetReplaceValue(255);
-		connectedThreshold->SetSeed(index);*/
-
-		using ConnectedFilterType =	itk::NeighborhoodConnectedImageFilter<Image3DType, Image3DType >;
-		ConnectedFilterType::Pointer neighborhoodConnected	= ConnectedFilterType::New();
-		neighborhoodConnected->SetInput(image3D);
-		neighborhoodConnected->SetLower(500);
-		neighborhoodConnected->SetUpper(820);
-
-		Image3DType::SizeType radius3D;
-
-		radius3D[0] = 2;   // two pixels along X
-		radius3D[1] = 2;   // two pixels along Y
-		radius3D[2] = 2;
-
-		neighborhoodConnected->SetRadius(radius3D);
-		
-		neighborhoodConnected->SetReplaceValue(255);
-
+		confidenceConnected->SetMultiplier(1.3);  //Multiplier = 0.57, iteracje 1
+		confidenceConnected->SetNumberOfIterations(1);
+		confidenceConnected->SetReplaceValue(99);
+		confidenceConnected->SetInitialNeighborhoodRadius(2);
 		ConnectedFilterType::IndexType index;
+		index[0] = 152;//129;//152;
+		index[1] = 168;//129;// 168;
+		index[2] = 48;// 48;
+	confidenceConnected->SetSeed(index);
+	confidenceConnected->Update();
+	series3DWriter->SetInput(confidenceConnected->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
+	series3DWriter->Update();
+	auto pixelVal=image3D->GetPixel(index);
+	
+	std::cout << image3D_mnozenie->GetPixel(index) << std::endl;
+
+	multiply->SetInput1(confidenceConnected->GetOutput());
+	multiply->SetInput2(image3D_mnozenie);
+	//image3D_mnozenie = multiply->GetOutput();;
+	multiply->Update();
+	series3DWriter->SetInput(multiply->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_v2.vtk");
+	series3DWriter->Update();
+
+	//	using ConnectedFilterType =	itk::ConnectedThresholdImageFilter< Image3DType,Image3DType >;
+	//	ConnectedFilterType::Pointer connectedThreshold = ConnectedFilterType::New();
+	//	connectedThreshold->SetInput(image3D);
+	//	connectedThreshold->SetLower(500);
+	//	connectedThreshold->SetConnectivity(ConnectedFilterType::FullConnectivity);
+	//	connectedThreshold->SetUpper(820);
+	//	connectedThreshold->SetReplaceValue(255);
+	//			ConnectedFilterType::IndexType index;
+	//	index[0] = 129;//129;//152;
+	//	index[1] = 129;//129;// 168;
+	//	index[2] = 48;// 48;
+	//	connectedThreshold->SetSeed(index);
+	//	connectedThreshold->SetSeed(index);
+	//series3DWriter->SetInput(connectedThreshold->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
+	//series3DWriter->Update();
+
+
+		//using ConnectedFilterType =	itk::NeighborhoodConnectedImageFilter<Image3DType, Image3DType >;
+		//ConnectedFilterType::Pointer neighborhoodConnected	= ConnectedFilterType::New();
+		//neighborhoodConnected->SetInput(image3D);
+		//neighborhoodConnected->SetLower(0);
+		//neighborhoodConnected->SetUpper(200);
+
+		//Image3DType::SizeType radius3D;
+
+		//radius3D[0] = 5;   // two pixels along X
+		//radius3D[1] = 5;   // two pixels along Y
+		//radius3D[2] =5;
+
+		//neighborhoodConnected->SetRadius(radius3D);
+		//
+		//neighborhoodConnected->SetReplaceValue(255);
+
+		//ConnectedFilterType::IndexType index;
 
 		/*Image3DType::RegionType region = image3D->GetLargestPossibleRegion();
 		Image3DType::SizeType size = region.GetSize();
 		std::cout << size << std::endl;*/
 
-		index[0] = 152;//129;//152;
-		index[1] = 168;//129;// 168;
-		index[2] = 48;// 48;
-		neighborhoodConnected->SetSeed(index);
+		//index[0] = 152;//129;//152;
+		//index[1] = 168;//129;// 168;
+		//index[2] = 48;// 48;
+		//neighborhoodConnected->SetSeed(index);
 
 		/*confidenceConnected->SetSeed(index);
 		confidenceConnected->SetInitialNeighborhoodRadius(2);
@@ -293,9 +328,9 @@ int main() // glowna funkcja programu
 
 		
 
-		series3DWriter->SetInput(neighborhoodConnected->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
-		series3DWriter->Update();
+		//series3DWriter->SetInput(neighborhoodConnected->GetOutput());
+		//series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
+		//series3DWriter->Update();
 
 
 
@@ -375,11 +410,11 @@ int main() // glowna funkcja programu
 		
 
 			//rozrost 
-			/*ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
+		/*	ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
 			connThres->SetInput(image3D);
 			connThres->SetConnectivity(ConnectedThreshold::FullConnectivity);
-			connThres->SetLower(0);
-			connThres->SetUpper(200);
+			connThres->SetLower(500);
+		connThres->SetUpper(200);
 			ConnectedThreshold::IndexType seed1;
 			seed1[0] = 129; seed1[1] = 136; seed1[2] = 48;
 			connThres->SetSeed(seed1);
