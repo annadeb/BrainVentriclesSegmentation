@@ -37,6 +37,8 @@
 #include<itkConfidenceConnectedImageFilter.h>
 //#include<itkCurvatureFlowImageFilter.h>
 #include<itkNeighborhoodConnectedImageFilter.h>
+//#include <itkAbsoluteValueDifferenceImageFilter.h>
+#include <itkInvertIntensityImageFilter.h>
 
 
 
@@ -56,7 +58,7 @@ using Series3DWriterType = itk::ImageSeriesWriter<Image3DType, Image3DType>;
 
 using Writer3Dtype = itk::ImageFileWriter<Image3DType>;
 using ReaderType = itk::ImageFileReader<ImageType>; 
-using Reader3DType = itk::ImageFileReader<ImageType>;
+using Reader3DType = itk::ImageFileReader<Image3DType>;
 
 using WriterType = itk::ImageFileWriter<ImageType>;
 
@@ -69,6 +71,8 @@ int main() // glowna funkcja programu
 {
 	try {
 		ReaderType::Pointer reader = ReaderType::New();
+		Reader3DType::Pointer reader3D = Reader3DType::New();
+		Reader3DType::Pointer reader3Db = Reader3DType::New();
 		WriterType::Pointer writer = WriterType::New();
 		ImageType::Pointer image = ImageType::New();
 
@@ -269,13 +273,79 @@ int main() // glowna funkcja programu
 	
 	std::cout << image3D_mnozenie->GetPixel(index) << std::endl;
 
-	multiply->SetInput1(confidenceConnected->GetOutput());
-	multiply->SetInput2(image3D_mnozenie);
+	//multiply->SetInput1(confidenceConnected->GetOutput());
+	//multiply->SetInput2(image3D_mnozenie);
+	////image3D_mnozenie = multiply->GetOutput();;
+	//multiply->Update();
+	//series3DWriter->SetInput(multiply->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_v2.vtk");
+	//series3DWriter->Update();
+
+
+	using InvertIntensityImageFilterType = itk::InvertIntensityImageFilter<Image3DType>;
+
+	InvertIntensityImageFilterType::Pointer invertIntensityFilter = InvertIntensityImageFilterType::New();
+	invertIntensityFilter->SetInput(confidenceConnected->GetOutput());
+	invertIntensityFilter->SetMaximum(1);
+	invertIntensityFilter->Update();
+	series3DWriter->SetInput(invertIntensityFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_invert.vtk");
+	series3DWriter->Update();
+
+	using WindowingImageFilter = itk::IntensityWindowingImageFilter<Image3DType>;
+	WindowingImageFilter::Pointer windowingImageFilter = WindowingImageFilter::New();
+	windowingImageFilter->SetInput(invertIntensityFilter->GetOutput());
+	windowingImageFilter->SetWindowMaximum(1);
+	windowingImageFilter->SetWindowMinimum(-1);
+	windowingImageFilter->SetOutputMinimum(0);
+	windowingImageFilter->SetOutputMaximum(1);
+	windowingImageFilter->Update();
+	series3DWriter->SetInput(windowingImageFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_window.vtk");
+	series3DWriter->Update();
+
+	
+
+	Image3DType::Pointer windowImage = Image3DType::New();
+	Image3DType::Pointer erode = Image3DType::New();
+
+	
+
+	reader3D->SetFileName("..\\wyniki\\img3D_window.vtk");
+	reader3D->Update();
+	windowImage = reader3D->GetOutput();
+
+	reader3Db->SetFileName("..\\wyniki\\img3D_erozja.vtk");
+	reader3Db->Update();
+	erode = reader3Db->GetOutput();
+
+	index[0] = 117;//129;//152;
+	index[1] = 158;//129;// 168;
+	index[2] = 47;// 48;
+
+	std::cout << windowingImageFilter->GetOutput()->GetPixel(index) << std::endl;
+	std::cout << reader3Db->GetOutput()->GetPixel(index) << std::endl;
+
+	multiply->SetInput1(windowImage);
+	multiply->SetInput2(erode);
 	//image3D_mnozenie = multiply->GetOutput();;
 	multiply->Update();
 	series3DWriter->SetInput(multiply->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_v2.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_KOMORY.vtk");
 	series3DWriter->Update();
+	
+	//using AbsoluteValueDifferenceImageFilterType =	itk::AbsoluteValueDifferenceImageFilter<Image3DType, Image3DType, Image3DType>;
+
+	//AbsoluteValueDifferenceImageFilterType::Pointer absoluteValueDifferenceFilter =
+	//	AbsoluteValueDifferenceImageFilterType::New();
+	//absoluteValueDifferenceFilter->SetInput1(image3D_mnozenie);
+	//absoluteValueDifferenceFilter->SetInput2(confidenceConnected->GetOutput());
+	//absoluteValueDifferenceFilter->Update();
+
+	//series3DWriter->SetInput(absoluteValueDifferenceFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_difference.vtk");
+	//series3DWriter->Update();
+
 
 	//	using ConnectedFilterType =	itk::ConnectedThresholdImageFilter< Image3DType,Image3DType >;
 	//	ConnectedFilterType::Pointer connectedThreshold = ConnectedFilterType::New();
