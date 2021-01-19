@@ -39,6 +39,13 @@
 #include<itkNeighborhoodConnectedImageFilter.h>
 //#include <itkAbsoluteValueDifferenceImageFilter.h>
 #include <itkInvertIntensityImageFilter.h>
+#include<itkRelabelComponentImageFilter.h>
+#include<itkFlipImageFilter.h>
+#include<itkAddImageFilter.h>
+#include<itkJoinImageFilter.h>
+#include "itkLabelGeometryImageFilter.h"
+
+
 
 
 
@@ -73,6 +80,8 @@ int main() // glowna funkcja programu
 		ReaderType::Pointer reader = ReaderType::New();
 		Reader3DType::Pointer reader3D = Reader3DType::New();
 		Reader3DType::Pointer reader3Db = Reader3DType::New();
+		Reader3DType::Pointer reader3Dc = Reader3DType::New();
+		Reader3DType::Pointer reader3Dd = Reader3DType::New();
 		WriterType::Pointer writer = WriterType::New();
 		ImageType::Pointer image = ImageType::New();
 
@@ -91,6 +100,9 @@ int main() // glowna funkcja programu
 		itk::GDCMImageIO::Pointer gdcmImageIO = itk::GDCMImageIO::New();
 
 
+		//namesGen->SetDirectory("../dane_glowa/glowa/mozg md/Head_Neck_Standard - 1/t2_tse_tra_6");
+		//namesGen->SetDirectory("../dane_glowa/glowa/mozg sd/Head_Neck_Standard - 1/t2_tse_tra_6");
+		
 		namesGen->SetDirectory("../dane_glowa/glowa/mozg zb/Head_Neck_Standard - 153275/t2_tse_tra_5");
 		itk::GDCMSeriesFileNames::SeriesUIDContainerType seriesUIDs = namesGen->GetSeriesUIDs();
 		itk::GDCMSeriesFileNames::FileNamesContainerType fileNames = namesGen->GetFileNames(seriesUIDs[0]);
@@ -249,7 +261,33 @@ int main() // glowna funkcja programu
 		smoothing->SetInput(image3D);
 		smoothing->SetNumberOfIterations(5);
 		smoothing->SetTimeStep(0.125);*/
-	
+
+		//using ConnCompFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
+
+		//ConnCompFilterType::Pointer connComp1 = ConnCompFilterType::New();
+		//connComp1->SetInput(openFilter->GetOutput());
+		//connComp1->SetBackgroundValue(0);
+		//connComp1->Update();
+		////SaveImage<LabelImageType>(connComp->GetOutput(), "../wyniki/wtf.vtk");
+
+
+		//using LabelGeometryImageFilterType = itk::LabelGeometryImageFilter<Image3DType>;
+		//LabelGeometryImageFilterType::Pointer labelGeometryImageFilter = LabelGeometryImageFilterType::New();
+		//labelGeometryImageFilter->SetInput(connComp1->GetOutput());
+		////labelGeometryImageFilter->SetIntensityInput(connComp->GetOutput());
+
+		//// These generate optional outputs.
+		//labelGeometryImageFilter->CalculatePixelIndicesOn();
+		//labelGeometryImageFilter->CalculateOrientedBoundingBoxOn();
+
+		//labelGeometryImageFilter->Update();
+		//
+		////LabelGeometryImageFilterType::LabelsType allLabels = labelGeometryImageFilter->GetLabels();
+		//series3DWriter->SetInput(labelGeometryImageFilter->GetOutput());
+		//series3DWriter->SetFileName("..\\wyniki\\img3D_labelGeometry.vtk");
+		//series3DWriter->Update();
+
+	//===============================================================================================================
 
 		using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
 		ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
@@ -264,7 +302,16 @@ int main() // glowna funkcja programu
 		index[0] = 152;//129;//152;
 		index[1] = 168;//129;// 168;
 		index[2] = 48;// 48;
-	confidenceConnected->SetSeed(index);
+
+		//index[0] = 111;//117;//129;//152;
+		//index[1] = 130;// 158;//129;// 168;
+		//index[2] = 47;// 48;
+		//ConnectedFilterType::IndexType index2;
+		//index2[0] = 111;//129;//152;
+		//index2[1] = 168;//129;// 168;
+		//index2[2] = 48;// 48;
+	confidenceConnected->AddSeed(index);
+	//confidenceConnected->AddSeed(index2);
 	confidenceConnected->Update();
 	series3DWriter->SetInput(confidenceConnected->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
@@ -319,8 +366,8 @@ int main() // glowna funkcja programu
 	reader3Db->Update();
 	erode = reader3Db->GetOutput();
 
-	index[0] = 117;//129;//152;
-	index[1] = 158;//129;// 168;
+	index[0] = 111;//117;//129;//152;
+	index[1] = 130;// 158;//129;// 168;
 	index[2] = 47;// 48;
 
 	std::cout << windowingImageFilter->GetOutput()->GetPixel(index) << std::endl;
@@ -331,8 +378,94 @@ int main() // glowna funkcja programu
 	//image3D_mnozenie = multiply->GetOutput();;
 	multiply->Update();
 	series3DWriter->SetInput(multiply->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_KOMORY.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_komory.vtk");
 	series3DWriter->Update();
+
+
+
+
+
+	using ConnCompFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
+
+	ConnCompFilterType::Pointer connComp = ConnCompFilterType::New();
+	connComp->SetInput(multiply->GetOutput());
+	connComp->SetBackgroundValue(0);
+	connComp->Update();
+
+	series3DWriter->SetInput(connComp->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_label.vtk");
+	series3DWriter->Update();
+
+
+	using RelabelComponentFilterType = itk::RelabelComponentImageFilter<Image3DType, Image3DType>;
+	RelabelComponentFilterType::Pointer relabel = RelabelComponentFilterType::New();
+	relabel->SetInput(connComp->GetOutput());
+	relabel->SetMinimumObjectSize(150);
+	
+	relabel->Update();
+
+	series3DWriter->SetInput(relabel->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_relabel.vtk");
+	series3DWriter->Update();
+
+
+	using FilterType = itk::BinaryThresholdImageFilter<Image3DType, Image3DType>;
+	FilterType::Pointer thresholder2 = FilterType::New();
+	thresholder2->SetInput(relabel->GetOutput());
+	thresholder2->SetLowerThreshold(2);
+	thresholder2->SetUpperThreshold(2);
+	thresholder2->Update();
+
+	series3DWriter->SetInput(thresholder2->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_binaryzacja1komora.vtk");
+	series3DWriter->Update();
+	
+	//flip
+	using FlipImageFilterType = itk::FlipImageFilter<Image3DType>;
+
+	FlipImageFilterType::Pointer flipFilter = FlipImageFilterType::New();
+	flipFilter->SetInput(thresholder2->GetOutput());
+
+
+	FlipImageFilterType::FlipAxesArrayType flipAxes;
+
+	flipAxes[0] = true;
+	flipAxes[1] = false;
+	flipAxes[2] = false;
+	flipFilter->SetFlipAxes(flipAxes);
+	flipFilter->Update();
+
+	series3DWriter->SetInput(flipFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\img3D_flip.vtk");
+	series3DWriter->Update();
+
+	//add
+	//reader3Dc->SetFileName("..\\wyniki\\img3D_binaryzacja1komora.vtk");
+	////reader3Dc->SetFileName("..\\wyniki\\img3D.vtk");
+	//reader3Dc->Update();
+	//Image3DType::Pointer komora13D = Image3DType::New();
+	//komora13D = reader3Dc->GetOutput();
+
+	//reader3Dd->SetFileName("..\\wyniki\\img3D_flip.vtk");
+	//reader3Dd->Update();
+	//Image3DType::Pointer flip = Image3DType::New();
+	//flip = reader3Dd->GetOutput();
+
+	//using AddImageFilterType = itk::AddImageFilter<Image3DType, Image3DType>;
+
+	//AddImageFilterType::Pointer addFilter = AddImageFilterType::New();
+
+	///*using JoinImageFilterType = itk::JoinImageFilter<Image3DType, Image3DType>;
+
+	//JoinImageFilterType::Pointer addFilter = JoinImageFilterType::New();*/
+	//addFilter->SetInput1(flip);
+	//addFilter->SetInput2(komora13D);
+	//
+
+	//series3DWriter->SetInput(addFilter->GetOutput());
+	//series3DWriter->SetFileName("..\\wyniki\\img3D_dodawanie.vtk");
+	//series3DWriter->Update();
+
 	
 	//using AbsoluteValueDifferenceImageFilterType =	itk::AbsoluteValueDifferenceImageFilter<Image3DType, Image3DType, Image3DType>;
 
