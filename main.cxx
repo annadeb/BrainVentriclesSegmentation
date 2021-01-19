@@ -132,7 +132,7 @@ int main() // glowna funkcja programu
 		//series2DWriter->Update();
 		//
 		series3DWriter->SetInput(image3D);
-		series3DWriter->SetFileName("..\\wyniki\\img3D.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\1_img3D.vtk");
 		series3DWriter->Update();
 
 
@@ -145,7 +145,7 @@ int main() // glowna funkcja programu
 		thresholder->SetLowerThreshold(300);
 
 		series3DWriter->SetInput(thresholder->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_bin_calosc.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\2_img3D_bin_calosc.vtk");
 		series3DWriter->Update();
 		image3D_bin = thresholder->GetOutput();
 		//zalewanie obszaru
@@ -180,7 +180,7 @@ int main() // glowna funkcja programu
 		dilateFilter->Update();
 
 		series3DWriter->SetInput(dilateFilter->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_dilate.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\3_img3D_dilate.vtk");
 		series3DWriter->Update();
 
 		//erozja 
@@ -199,7 +199,7 @@ int main() // glowna funkcja programu
 		erodeFilter->Update();
 
 		series3DWriter->SetInput(erodeFilter->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_erozja.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\4_img3D_erozja.vtk");
 		series3DWriter->Update();
 
 		//mno¿enie
@@ -211,7 +211,7 @@ int main() // glowna funkcja programu
 		image3D_mnozenie = multiply->GetOutput();;
 		multiply->Update();
 		series3DWriter->SetInput(image3D_mnozenie);
-		series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\5_img3D_mnozenie.vtk");
 		series3DWriter->Update();
 
 		//filter medianowy 
@@ -232,7 +232,7 @@ int main() // glowna funkcja programu
 		thresholder->SetLowerThreshold(600);
 		thresholder->SetUpperThreshold(800);
 		series3DWriter->SetInput(thresholder->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_bin_komory.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\6_img3D_bin_komory.vtk");
 		series3DWriter->Update();
 
 		//otwarcie
@@ -249,7 +249,7 @@ int main() // glowna funkcja programu
 		openFilter->Update();
 
 		series3DWriter->SetInput(openFilter->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_otwarcie.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\7_img3D_otwarcie.vtk");
 		series3DWriter->Update();
 
 		//pierwszy niezerowy punkt obrazu od czubka g³owy w dó³
@@ -269,7 +269,7 @@ int main() // glowna funkcja programu
 		connComp1->SetBackgroundValue(0);
 		connComp1->Update();
 		series3DWriter->SetInput(connComp1->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_etykiety.vtk");
+		series3DWriter->SetFileName("..\\wyniki\\8_img3D_etykiety.vtk");
 		series3DWriter->Update();
 
 
@@ -306,9 +306,16 @@ int main() // glowna funkcja programu
 		confidenceConnected->SetReplaceValue(99);
 		confidenceConnected->SetInitialNeighborhoodRadius(2);
 		ConnectedFilterType::IndexType index;
-		index[0] = startPoint[0]+10; // 152;//129;//152;
-		index[1] = startPoint[1]; //168;//129;// 168;
-		index[2] = startPoint[2];//48;// 48;
+		index[0] = (int)(startPoint[0]) + 2; // 152;//129;//152;
+		index[1] = (int)(startPoint[1])+2; //168;//129;// 168;
+		index[2] = (int)(startPoint[2])+2;//48;// 48;
+
+		std::cout << "Indeksy:" << std::endl;
+		std::cout << image3D->GetPixel(index) << std::endl;
+		std::cout << index[0] << std::endl;
+		std::cout << index[1] << std::endl;
+		std::cout << index[2] << std::endl;
+		std::cout << "KONIEC" << std::endl;
 
 		//index[0] = 111;//117;//129;//152;
 		//index[1] = 130;// 158;//129;// 168;
@@ -321,7 +328,7 @@ int main() // glowna funkcja programu
 	//confidenceConnected->AddSeed(index2);
 	confidenceConnected->Update();
 	series3DWriter->SetInput(confidenceConnected->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9_img3D_rozrost-thresh.vtk");
 	series3DWriter->Update();
 	auto pixelVal=image3D->GetPixel(index);
 	
@@ -343,7 +350,7 @@ int main() // glowna funkcja programu
 	invertIntensityFilter->SetMaximum(1);
 	invertIntensityFilter->Update();
 	series3DWriter->SetInput(invertIntensityFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_invert.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9a_img3D_invert.vtk");
 	series3DWriter->Update();
 
 	using WindowingImageFilter = itk::IntensityWindowingImageFilter<Image3DType>;
@@ -355,7 +362,7 @@ int main() // glowna funkcja programu
 	windowingImageFilter->SetOutputMaximum(1);
 	windowingImageFilter->Update();
 	series3DWriter->SetInput(windowingImageFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_window.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9b_img3D_window.vtk");
 	series3DWriter->Update();
 
 	
@@ -365,11 +372,11 @@ int main() // glowna funkcja programu
 
 	
 
-	reader3D->SetFileName("..\\wyniki\\img3D_window.vtk");
+	reader3D->SetFileName("..\\wyniki\\9b_img3D_window.vtk");
 	reader3D->Update();
 	windowImage = reader3D->GetOutput();
 
-	reader3Db->SetFileName("..\\wyniki\\img3D_erozja.vtk");
+	reader3Db->SetFileName("..\\wyniki\\4_img3D_erozja.vtk");
 	reader3Db->Update();
 	erode = reader3Db->GetOutput();
 
@@ -385,7 +392,7 @@ int main() // glowna funkcja programu
 	//image3D_mnozenie = multiply->GetOutput();;
 	multiply->Update();
 	series3DWriter->SetInput(multiply->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_mnozenie_komory.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9c_img3D_mnozenie_komory.vtk");
 	series3DWriter->Update();
 
 
@@ -400,19 +407,19 @@ int main() // glowna funkcja programu
 	connComp->Update();
 
 	series3DWriter->SetInput(connComp->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_label.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9d_img3D_label.vtk");
 	series3DWriter->Update();
 
 
 	using RelabelComponentFilterType = itk::RelabelComponentImageFilter<Image3DType, Image3DType>;
 	RelabelComponentFilterType::Pointer relabel = RelabelComponentFilterType::New();
 	relabel->SetInput(connComp->GetOutput());
-	relabel->SetMinimumObjectSize(150);
+	relabel->SetMinimumObjectSize(100);
 	
 	relabel->Update();
 
 	series3DWriter->SetInput(relabel->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_relabel.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9e_img3D_relabel.vtk");
 	series3DWriter->Update();
 
 
@@ -424,7 +431,7 @@ int main() // glowna funkcja programu
 	thresholder2->Update();
 
 	series3DWriter->SetInput(thresholder2->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_binaryzacja1komora.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9f_img3D_binaryzacja1komora.vtk");
 	series3DWriter->Update();
 	
 	//flip
@@ -443,7 +450,7 @@ int main() // glowna funkcja programu
 	flipFilter->Update();
 
 	series3DWriter->SetInput(flipFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\img3D_flip.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9g_img3D_flip.vtk");
 	series3DWriter->Update();
 
 	//add
