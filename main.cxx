@@ -262,31 +262,38 @@ int main() // glowna funkcja programu
 		smoothing->SetNumberOfIterations(5);
 		smoothing->SetTimeStep(0.125);*/
 
-		//using ConnCompFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
+		using ConnCompFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
 
-		//ConnCompFilterType::Pointer connComp1 = ConnCompFilterType::New();
-		//connComp1->SetInput(openFilter->GetOutput());
-		//connComp1->SetBackgroundValue(0);
-		//connComp1->Update();
-		////SaveImage<LabelImageType>(connComp->GetOutput(), "../wyniki/wtf.vtk");
+		ConnCompFilterType::Pointer connComp1 = ConnCompFilterType::New();
+		connComp1->SetInput(openFilter->GetOutput());
+		connComp1->SetBackgroundValue(0);
+		connComp1->Update();
+		series3DWriter->SetInput(connComp1->GetOutput());
+		series3DWriter->SetFileName("..\\wyniki\\img3D_etykiety.vtk");
+		series3DWriter->Update();
 
 
-		//using LabelGeometryImageFilterType = itk::LabelGeometryImageFilter<Image3DType>;
-		//LabelGeometryImageFilterType::Pointer labelGeometryImageFilter = LabelGeometryImageFilterType::New();
-		//labelGeometryImageFilter->SetInput(connComp1->GetOutput());
-		////labelGeometryImageFilter->SetIntensityInput(connComp->GetOutput());
+		using LabelGeometryImageFilterType = itk::LabelGeometryImageFilter<Image3DType>;
+		LabelGeometryImageFilterType::Pointer labelGeometryImageFilter = LabelGeometryImageFilterType::New();
+		labelGeometryImageFilter->SetInput(connComp1->GetOutput());
+		//labelGeometryImageFilter->SetIntensityInput(connComp->GetOutput());
 
-		//// These generate optional outputs.
-		//labelGeometryImageFilter->CalculatePixelIndicesOn();
-		//labelGeometryImageFilter->CalculateOrientedBoundingBoxOn();
+		// These generate optional outputs.
+		labelGeometryImageFilter->CalculatePixelIndicesOn();
+		labelGeometryImageFilter->CalculateOrientedBoundingBoxOn();
 
-		//labelGeometryImageFilter->Update();
-		//
-		////LabelGeometryImageFilterType::LabelsType allLabels = labelGeometryImageFilter->GetLabels();
-		//series3DWriter->SetInput(labelGeometryImageFilter->GetOutput());
-		//series3DWriter->SetFileName("..\\wyniki\\img3D_labelGeometry.vtk");
-		//series3DWriter->Update();
-
+		labelGeometryImageFilter->Update();
+		LabelGeometryImageFilterType::LabelsType labelsAll= labelGeometryImageFilter->GetLabels();
+		
+		std::cout << labelsAll.size() << std::endl;
+		std::cout << labelGeometryImageFilter->GetCentroid(labelsAll.size()-1) << std::endl;
+		
+		LabelGeometryImageFilterType::LabelPointType startPoint = labelGeometryImageFilter->GetCentroid(labelsAll.size() - 1);
+		//LabelGeometryImageFilterType::LabelsType allLabels = labelGeometryImageFilter->GetLabels();
+		
+		std::cout << startPoint[0] << std::endl;
+		std::cout << startPoint[1] << std::endl;
+		std::cout << startPoint[2] << std::endl;
 	//===============================================================================================================
 
 		using ConnectedFilterType =itk::ConfidenceConnectedImageFilter<Image3DType, Image3DType>;
@@ -299,9 +306,9 @@ int main() // glowna funkcja programu
 		confidenceConnected->SetReplaceValue(99);
 		confidenceConnected->SetInitialNeighborhoodRadius(2);
 		ConnectedFilterType::IndexType index;
-		index[0] = 152;//129;//152;
-		index[1] = 168;//129;// 168;
-		index[2] = 48;// 48;
+		index[0] = startPoint[0]+10; // 152;//129;//152;
+		index[1] = startPoint[1]; //168;//129;// 168;
+		index[2] = startPoint[2];//48;// 48;
 
 		//index[0] = 111;//117;//129;//152;
 		//index[1] = 130;// 158;//129;// 168;
