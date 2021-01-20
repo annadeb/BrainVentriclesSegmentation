@@ -404,22 +404,19 @@ int main() // glowna funkcja programu
 	resampler->SetDefaultPixelValue(100);
 
 	series3DWriter->SetInput(resampler->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_resample.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_resample.vtk");
 	series3DWriter->Update();
 	//#####################	Mno¿enie prawej przesuniêtej maski z lew¹ komor¹  ######################
-	Image3DType::Pointer flippedImage = Image3DType::New();
-	flippedImage = resampler->GetOutput();
-	flippedImage->CopyInformation(thresholder2->GetOutput());
-
+	
 	MultiplyType::Pointer multiply_labelled = MultiplyType::New();
 	multiply_labelled->SetInput1(relabel->GetOutput());
-	image3D_mnozenie_left = flippedImage;
+	image3D_mnozenie_left = resampler->GetOutput();
 	image3D_mnozenie_left->CopyInformation(relabel->GetOutput());
 	multiply_labelled->SetInput2(image3D_mnozenie_left);
 
 	multiply_labelled->Update();
 	series3DWriter->SetInput(multiply_labelled->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_left_v.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_left_v.vtk");
 	series3DWriter->Update();
 //############### Po³¹cznie maski lewej i prawej komory ########################
 	std::cout << "Polaczenie masek..." << std::endl;
@@ -436,7 +433,7 @@ int main() // glowna funkcja programu
 
 
 	series3DWriter->SetInput(addFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_dodawanie.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_dodawanie.vtk");
 	series3DWriter->Update();
 
 	//################# Okno intensywnoœci ######################33
@@ -450,7 +447,7 @@ int main() // glowna funkcja programu
 	windowingFilter->SetOutputMaximum(1000);
 	windowingFilter->Update();
 	series3DWriter->SetInput(windowingFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_dodawanie_window.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9k_img3D_dodawanie_window.vtk");
 	series3DWriter->Update();
 
 	//#################### Na³o¿enie masek komór na obraz oryginalny ####################
