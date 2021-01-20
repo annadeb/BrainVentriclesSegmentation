@@ -92,9 +92,11 @@ int main() // glowna funkcja programu
 		itk::GDCMSeriesFileNames::SeriesUIDContainerType seriesUIDs = namesGen->GetSeriesUIDs();
 		itk::GDCMSeriesFileNames::FileNamesContainerType fileNames = namesGen->GetFileNames(seriesUIDs[0]);
 		for (size_t i = 0; i < seriesUIDs.size(); i++) {
-			std::cout << seriesUIDs[i] << std::endl;
+			std::cout << "UID serii:"+ seriesUIDs[i] << std::endl;
 		}
-		//Czytanie serii obrazowej 
+		//######################## Czytanie serii obrazowej ##########################
+		std::cout << "Czytanie i zapisywanie serii obrazowej..." << std::endl;
+
 		seriesReader->SetFileNames(namesGen->GetFileNames(seriesUIDs[0]));
 		seriesReader->SetImageIO(gdcmImageIO);
 		image3D = seriesReader->GetOutput();
@@ -120,6 +122,8 @@ int main() // glowna funkcja programu
 
 
 		//########### Binaryzacja ######################
+		std::cout << "Binaryzacja..." << std::endl;
+
 		FilterType::Pointer thresholder = FilterType::New();
 		thresholder->SetInput(image3D);
 		thresholder->SetInsideValue(1);
@@ -133,6 +137,8 @@ int main() // glowna funkcja programu
 
 
 		//########### Dylatacja ########################
+		std::cout << "Dylatacja..." << std::endl;
+
 		BallType::SizeType rad;
 		rad[0] = 8;
 		rad[1] = 8;
@@ -153,6 +159,8 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//########### Erozja ############################# 
+		std::cout << "Erozja..." << std::endl;
+
 		rad[0] = 38;
 		rad[1] = 38;
 		rad[2] = 38;
@@ -171,6 +179,8 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//############# Mno¿enie maski z obrazem oryginalnym ##############
+		std::cout << "Mno¿enie maski z obrazem oryginalnym..." << std::endl;
+
 		MultiplyType::Pointer multiply = MultiplyType::New();
 		multiply->SetInput1(image3D);
 		multiply->SetInput2(erodeFilter->GetOutput());
@@ -184,6 +194,8 @@ int main() // glowna funkcja programu
 		
 
 		//############ Binaryzacja ##########################################
+		std::cout << "Binaryzacja..." << std::endl;
+
 		thresholder->SetInput(multiply->GetOutput());
 		thresholder->SetInsideValue(1);
 		thresholder->SetOutsideValue(0);
@@ -194,6 +206,8 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//############# Otwarcie #####################
+		std::cout << "Otwarcie..." << std::endl;
+
 		int radiusOpen = 1;
 		structuringElement.SetRadius(radiusOpen);
 		structuringElement.CreateStructuringElement();
@@ -210,6 +224,8 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//################# Etykietowanie ################
+		std::cout << "Etykietowanie..." << std::endl;
+
 		ConnCompFilterType::Pointer connComp1 = ConnCompFilterType::New();
 		connComp1->SetInput(openFilter->GetOutput());
 		connComp1->SetBackgroundValue(0);
@@ -219,6 +235,8 @@ int main() // glowna funkcja programu
 		series3DWriter->Update();
 
 		//############### Pobieranie centroidu ostatniej etykiety (odpowiadaj¹cej czêœci komory prawa) ######################
+		std::cout << "Pobieranie centroidu ostatniej etykiety komory..." << std::endl;
+
 		LabelGeometryImageFilterType::Pointer labelGeometryImageFilter = LabelGeometryImageFilterType::New();
 		labelGeometryImageFilter->SetInput(connComp1->GetOutput());
 		labelGeometryImageFilter->CalculatePixelIndicesOn();
@@ -226,8 +244,15 @@ int main() // glowna funkcja programu
 		labelGeometryImageFilter->Update();
 		LabelGeometryImageFilterType::LabelsType labelsAll= labelGeometryImageFilter->GetLabels();
 		LabelGeometryImageFilterType::LabelPointType startPoint = labelGeometryImageFilter->GetCentroid(labelsAll.size() - 1);
-		
-		//################### Rozrost obszaru od punktu wyznaczonego w poprzednim kroku #############################3
+		std::cout << "Wspolrzedne centroidu:" << std::endl;
+		std::cout << startPoint[0] << std::endl;
+		std::cout << startPoint[1] << std::endl;
+		std::cout << startPoint[2] << std::endl;
+
+
+		//################### Rozrost obszaru od punktu wyznaczonego w poprzednim kroku ###############################
+		std::cout << "Rozrost obszaru..." << std::endl;
+
 		ConnectedFilterType::Pointer confidenceConnected = ConnectedFilterType::New();
 		confidenceConnected->SetInput(image3D); 
 		confidenceConnected->SetMultiplier(1.3); 
@@ -245,6 +270,8 @@ int main() // glowna funkcja programu
 		series3DWriter->SetFileName("..\\wyniki\\9_img3D_rozrost-thresh.vtk");
 		series3DWriter->Update();
 	//##################### Odwracanie intensywnoœci ###################
+		std::cout << "Odwracanie intensywnosci..." << std::endl;
+
 	InvertIntensityImageFilterType::Pointer invertIntensityFilter = InvertIntensityImageFilterType::New();
 	invertIntensityFilter->SetInput(confidenceConnected->GetOutput());
 	invertIntensityFilter->SetMaximum(1);
@@ -254,6 +281,8 @@ int main() // glowna funkcja programu
 	series3DWriter->Update();
 
 	//################ Okno intensywnoœci #################################
+	std::cout << "Okno intensywnosci..." << std::endl;
+
 	WindowingImageFilter::Pointer windowingImageFilter = WindowingImageFilter::New();
 	windowingImageFilter->SetInput(invertIntensityFilter->GetOutput());
 	windowingImageFilter->SetWindowMaximum(1);
@@ -270,6 +299,8 @@ int main() // glowna funkcja programu
 
 
 	//################## Mno¿enie obrazów ######################
+	std::cout << "Mnozenie obrazow..." << std::endl;
+
 	reader3D->SetFileName("..\\wyniki\\9b_img3D_window.vtk");
 	reader3D->Update();
 	windowImage = reader3D->GetOutput();
@@ -288,6 +319,7 @@ int main() // glowna funkcja programu
 
 
 	//################################ Etykietowanie ##########################
+	std::cout << "Etykietowanie..." << std::endl;
 
 	connComp1->SetInput(multiply->GetOutput());
 	connComp1->SetBackgroundValue(0);
@@ -297,7 +329,9 @@ int main() // glowna funkcja programu
 	series3DWriter->SetFileName("..\\wyniki\\9d_img3D_label.vtk");
 	series3DWriter->Update();
 
-	//################### Reetykietowanie, usuniêcie obiektów mniejszych ni¿ 100 pikseli ##############################3
+	//################### Reetykietowanie, usuniêcie obiektów mniejszych ni¿ 100 pikseli ##############################
+	std::cout << "Reetykietowanie..." << std::endl;
+
 	RelabelComponentFilterType::Pointer relabel = RelabelComponentFilterType::New();
 	relabel->SetInput(connComp1->GetOutput());
 	relabel->SetMinimumObjectSize(100);
@@ -308,7 +342,9 @@ int main() // glowna funkcja programu
 	series3DWriter->SetFileName("..\\wyniki\\9e_img3D_relabel.vtk");
 	series3DWriter->Update();
 
-	//######################### Wybór etykiety -- wysegmentowana prawa komora ################################3
+	//######################### Wybór etykiety -- wysegmentowana prawa komora #################################
+	std::cout << "Wybór etykiety..." << std::endl;
+
 	FilterType::Pointer thresholder2 = FilterType::New();
 	thresholder2->SetInput(relabel->GetOutput());
 	thresholder2->SetLowerThreshold(2);
@@ -320,6 +356,8 @@ int main() // glowna funkcja programu
 	series3DWriter->Update();
 	
 	//##################### Odbicie maski prawej komory na lew¹ pó³kule ###################
+	std::cout << "Odbicie maski..." << std::endl;
+
 	using FlipImageFilterType = itk::FlipImageFilter<Image3DType>;
 
 	FlipImageFilterType::Pointer flipFilter = FlipImageFilterType::New();
@@ -344,6 +382,7 @@ int main() // glowna funkcja programu
 	flipImage->CopyInformation(thresholder2->GetOutput());
 	
 	//#################### Korekta miejsca maski lewej komory ######################
+	std::cout << "Korekta miejsca maski lewej..." << std::endl;
 
 	ResampleFilterType::Pointer resampler = ResampleFilterType::New();
 
@@ -368,6 +407,8 @@ int main() // glowna funkcja programu
 	series3DWriter->Update();
 
 //############### Po³¹cznie maski lewej i prawej komory ########################
+	std::cout << "Polaczenie masek..." << std::endl;
+
 	AddImageFilterType::Pointer addFilter = AddImageFilterType::New();
 
 
@@ -384,6 +425,7 @@ int main() // glowna funkcja programu
 	series3DWriter->Update();
 
 	//################# Okno intensywnoœci ######################33
+	std::cout << "Okno intensywnosci..." << std::endl;
 
 	WindowingImageFilter::Pointer windowingFilter = WindowingImageFilter::New();
 	windowingFilter->SetInput(addFilter->GetOutput());
@@ -396,7 +438,9 @@ int main() // glowna funkcja programu
 	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_dodawanie_window.vtk");
 	series3DWriter->Update();
 
-	//#################### Na³o¿enie masek komór na obraz oryginalny####################
+	//#################### Na³o¿enie masek komór na obraz oryginalny ####################
+	std::cout << "Nalozenie masek na komor na obrazy oryginalne..." << std::endl;
+
 	Image3DType::Pointer maskImage = Image3DType::New();
 	maskImage = windowingFilter->GetOutput();
 	maskImage->CopyInformation(image3D);
@@ -409,7 +453,8 @@ int main() // glowna funkcja programu
 	series3DWriter->SetInput(addFilter2->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\Wynik_koncowy.vtk");
 	series3DWriter->Update();
-	
+	std::cout << "Koniec algorytmu." << std::endl;
+
 
 	}
 catch(itk::ExceptionObject &ex){
