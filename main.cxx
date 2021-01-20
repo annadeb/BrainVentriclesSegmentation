@@ -81,6 +81,7 @@ int main() // glowna funkcja programu
 		Image3DType::Pointer image3D = Image3DType::New();
 		Image3DType::Pointer image3D_bin = Image3DType::New();
 		Image3DType::Pointer image3D_mnozenie = Image3DType::New();
+		Image3DType::Pointer image3D_mnozenie_left = Image3DType::New();
 
 		ImageIOType::Pointer dicomIO = ImageIOType::New();
 		Writer3Dtype::Pointer writer3D = Writer3Dtype::New();
@@ -405,23 +406,37 @@ int main() // glowna funkcja programu
 	series3DWriter->SetInput(resampler->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_resample.vtk");
 	series3DWriter->Update();
+	//#####################	Mno¿enie prawej przesuniêtej maski z lew¹ komor¹  ######################
+	Image3DType::Pointer flippedImage = Image3DType::New();
+	flippedImage = resampler->GetOutput();
+	flippedImage->CopyInformation(thresholder2->GetOutput());
 
+	MultiplyType::Pointer multiply_labelled = MultiplyType::New();
+	multiply_labelled->SetInput1(relabel->GetOutput());
+	image3D_mnozenie_left = flippedImage;
+	image3D_mnozenie_left->CopyInformation(relabel->GetOutput());
+	multiply_labelled->SetInput2(image3D_mnozenie_left);
+
+	multiply_labelled->Update();
+	series3DWriter->SetInput(multiply_labelled->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_left_v.vtk");
+	series3DWriter->Update();
 //############### Po³¹cznie maski lewej i prawej komory ########################
 	std::cout << "Polaczenie masek..." << std::endl;
 
 	AddImageFilterType::Pointer addFilter = AddImageFilterType::New();
 
+	Image3DType::Pointer left_v = Image3DType::New();
+	left_v = multiply_labelled->GetOutput();
+	left_v->CopyInformation(thresholder2->GetOutput());
 
-	Image3DType::Pointer flippedImage = Image3DType::New();
-	flippedImage = resampler->GetOutput();
-	flippedImage->CopyInformation(thresholder2->GetOutput());
 
-	addFilter->SetInput1(flippedImage);
+	addFilter->SetInput1(left_v);
 	addFilter->SetInput2(thresholder2->GetOutput());
 
 
 	series3DWriter->SetInput(addFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_dodawanie.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_dodawanie.vtk");
 	series3DWriter->Update();
 
 	//################# Okno intensywnoœci ######################33
@@ -435,7 +450,7 @@ int main() // glowna funkcja programu
 	windowingFilter->SetOutputMaximum(1000);
 	windowingFilter->Update();
 	series3DWriter->SetInput(windowingFilter->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_dodawanie_window.vtk");
+	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_dodawanie_window.vtk");
 	series3DWriter->Update();
 
 	//#################### Na³o¿enie masek komór na obraz oryginalny ####################
@@ -453,7 +468,13 @@ int main() // glowna funkcja programu
 	series3DWriter->SetInput(addFilter2->GetOutput());
 	series3DWriter->SetFileName("..\\wyniki\\Wynik_koncowy.vtk");
 	series3DWriter->Update();
+
+
+
+
+
 	std::cout << "Koniec algorytmu." << std::endl;
+
 
 
 	}
