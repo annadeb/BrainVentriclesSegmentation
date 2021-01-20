@@ -44,6 +44,7 @@
 #include<itkAddImageFilter.h>
 #include<itkJoinImageFilter.h>
 #include "itkLabelGeometryImageFilter.h"
+#include<itkImageRegistrationMethod.h>
 
 
 
@@ -148,18 +149,7 @@ int main() // glowna funkcja programu
 		series3DWriter->SetFileName("..\\wyniki\\2_img3D_bin_calosc.vtk");
 		series3DWriter->Update();
 		image3D_bin = thresholder->GetOutput();
-		//zalewanie obszaru
-		/*using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
 
-		ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
-		connected->SetInput(image3D_bin);
-		connected->SetBackgroundValue(1);
-			connected->Update();
-
-		std::cout << "Number of objects: " << connected->GetObjectCount() << std::endl;
-		series3DWriter->SetInput(connected->GetOutput());
-		series3DWriter->SetFileName("..\\wyniki\\img3D_zalane.vtk");
-		series3DWriter->Update();*/
 
 		//dylatacja
 		BallType::SizeType rad;
@@ -397,8 +387,6 @@ int main() // glowna funkcja programu
 
 
 
-
-
 	using ConnCompFilterType = itk::ConnectedComponentImageFilter<Image3DType, Image3DType>;
 
 	ConnCompFilterType::Pointer connComp = ConnCompFilterType::New();
@@ -447,6 +435,7 @@ int main() // glowna funkcja programu
 	flipAxes[1] = false;
 	flipAxes[2] = false;
 	flipFilter->SetFlipAxes(flipAxes);
+	
 	flipFilter->Update();
 
 	series3DWriter->SetInput(flipFilter->GetOutput());
@@ -462,256 +451,92 @@ int main() // glowna funkcja programu
 
 	//reader3Dd->SetFileName("..\\wyniki\\img3D_flip.vtk");
 	//reader3Dd->Update();
-	//Image3DType::Pointer flip = Image3DType::New();
+	Image3DType::Pointer flipImage = Image3DType::New();
 	//flip = reader3Dd->GetOutput();
 
-	//using AddImageFilterType = itk::AddImageFilter<Image3DType, Image3DType>;
-
-	//AddImageFilterType::Pointer addFilter = AddImageFilterType::New();
-
-	///*using JoinImageFilterType = itk::JoinImageFilter<Image3DType, Image3DType>;
-
-	//JoinImageFilterType::Pointer addFilter = JoinImageFilterType::New();*/
-	//addFilter->SetInput1(flip);
-	//addFilter->SetInput2(komora13D);
-	//
-
-	//series3DWriter->SetInput(addFilter->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_dodawanie.vtk");
-	//series3DWriter->Update();
+	flipImage = flipFilter->GetOutput();
+	flipImage->CopyInformation(thresholder2->GetOutput());
+	
 
 	
-	//using AbsoluteValueDifferenceImageFilterType =	itk::AbsoluteValueDifferenceImageFilter<Image3DType, Image3DType, Image3DType>;
-
-	//AbsoluteValueDifferenceImageFilterType::Pointer absoluteValueDifferenceFilter =
-	//	AbsoluteValueDifferenceImageFilterType::New();
-	//absoluteValueDifferenceFilter->SetInput1(image3D_mnozenie);
-	//absoluteValueDifferenceFilter->SetInput2(confidenceConnected->GetOutput());
-	//absoluteValueDifferenceFilter->Update();
-
-	//series3DWriter->SetInput(absoluteValueDifferenceFilter->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_difference.vtk");
-	//series3DWriter->Update();
-
-
-	//	using ConnectedFilterType =	itk::ConnectedThresholdImageFilter< Image3DType,Image3DType >;
-	//	ConnectedFilterType::Pointer connectedThreshold = ConnectedFilterType::New();
-	//	connectedThreshold->SetInput(image3D);
-	//	connectedThreshold->SetLower(500);
-	//	connectedThreshold->SetConnectivity(ConnectedFilterType::FullConnectivity);
-	//	connectedThreshold->SetUpper(820);
-	//	connectedThreshold->SetReplaceValue(255);
-	//			ConnectedFilterType::IndexType index;
-	//	index[0] = 129;//129;//152;
-	//	index[1] = 129;//129;// 168;
-	//	index[2] = 48;// 48;
-	//	connectedThreshold->SetSeed(index);
-	//	connectedThreshold->SetSeed(index);
-	//series3DWriter->SetInput(connectedThreshold->GetOutput());
-	//series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
-	//series3DWriter->Update();
-
-
-		//using ConnectedFilterType =	itk::NeighborhoodConnectedImageFilter<Image3DType, Image3DType >;
-		//ConnectedFilterType::Pointer neighborhoodConnected	= ConnectedFilterType::New();
-		//neighborhoodConnected->SetInput(image3D);
-		//neighborhoodConnected->SetLower(0);
-		//neighborhoodConnected->SetUpper(200);
-
-		//Image3DType::SizeType radius3D;
-
-		//radius3D[0] = 5;   // two pixels along X
-		//radius3D[1] = 5;   // two pixels along Y
-		//radius3D[2] =5;
-
-		//neighborhoodConnected->SetRadius(radius3D);
-		//
-		//neighborhoodConnected->SetReplaceValue(255);
-
-		//ConnectedFilterType::IndexType index;
-
-		/*Image3DType::RegionType region = image3D->GetLargestPossibleRegion();
-		Image3DType::SizeType size = region.GetSize();
-		std::cout << size << std::endl;*/
-
-		//index[0] = 152;//129;//152;
-		//index[1] = 168;//129;// 168;
-		//index[2] = 48;// 48;
-		//neighborhoodConnected->SetSeed(index);
-
-		/*confidenceConnected->SetSeed(index);
-		confidenceConnected->SetInitialNeighborhoodRadius(2);
-		confidenceConnected->Update();*/
-
-		
-
-		//series3DWriter->SetInput(neighborhoodConnected->GetOutput());
-		//series3DWriter->SetFileName("..\\wyniki\\img3D_rozrost-thresh.vtk");
-		//series3DWriter->Update();
-
-
-
-		//	using LabelShapeKeepNObjectsImageFilterType = itk::LabelShapeKeepNObjectsImageFilter<OutputImageType>;
-		//	LabelShapeKeepNObjectsImageFilterType::Pointer labelShapeKeepNObjectsImageFilter =
-		//		LabelShapeKeepNObjectsImageFilterType::New();
-		//	labelShapeKeepNObjectsImageFilter->SetInput(connected->GetOutput());
-		//	labelShapeKeepNObjectsImageFilter->SetBackgroundValue(0);
-		//	labelShapeKeepNObjectsImageFilter->SetNumberOfObjects(1);
-		//	labelShapeKeepNObjectsImageFilter->SetAttribute(
-		//		LabelShapeKeepNObjectsImageFilterType::LabelObjectType::NUMBER_OF_PIXELS);
-		//	
-		//	using RescaleFilterType = itk::RescaleIntensityImageFilter<OutputImageType, Image3DType>;
-		//	RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
-		//	rescaleFilter->SetOutputMinimum(0);
-		//	rescaleFilter->SetOutputMaximum(itk::NumericTraits<PixelType>::max());
-		//	rescaleFilter->SetInput(labelShapeKeepNObjectsImageFilter->GetOutput());
-		//
-		//#ifdef ENABLE_QUICKVIEW
-		//	QuickView viewer;
-		//	viewer.AddImage(image3D, true, itksys::SystemTools::GetFilenameName(argv[1]));
-		//
-		//	std::stringstream desc;
-		//	desc << "Largest object of " << connected->GetObjectCount() << " objects";
-		//	viewer.AddImage(rescaleFilter->GetOutput(), true, desc.str());
-		//
-		//	viewer.Visualize();
-		//#endif
-		//
-		//	//
-		//	using BinaryImageToLabelMapFilterType = itk::BinaryImageToLabelMapFilter<Image3DType>;
-		//	BinaryImageToLabelMapFilterType::Pointer binaryImageToLabelMapFilter = BinaryImageToLabelMapFilterType::New();
-		//	binaryImageToLabelMapFilter->SetInput(openFilter->GetOutput());
-		//	binaryImageToLabelMapFilter->Update();
-		////
-		//	using LabelMapToLabelImageFilterType =
-		//		itk::LabelMapToLabelImageFilter<BinaryImageToLabelMapFilterType::OutputImageType, Image3DType>;
-		//	LabelMapToLabelImageFilterType::Pointer labelMapToLabelImageFilter = LabelMapToLabelImageFilterType::New();
-		//	labelMapToLabelImageFilter->SetInput(binaryImageToLabelMapFilter->GetOutput());
-		//	labelMapToLabelImageFilter->Update();
-		////
-		//	using LabelStatisticsImageFilterType = itk::LabelStatisticsImageFilter<Image3DType, Image3DType>;
-		//	LabelStatisticsImageFilterType::Pointer labelStatisticsImageFilter = LabelStatisticsImageFilterType::New();
-		//	labelStatisticsImageFilter->SetLabelInput(labelMapToLabelImageFilter->GetOutput());
-		//	labelStatisticsImageFilter->SetInput(openFilter->GetOutput());
-		//	labelStatisticsImageFilter->Update();
-		//	labelStatisticsImageFilter->GetRegion(labelStatisticsImageFilter->GetValidLabelValues()[0]);
-
-		//
-		//	std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
-		//	std::cout << std::endl;
-		//
-		//	using LabelPixelType = LabelStatisticsImageFilterType::LabelPixelType;
-		//
-		//	for (auto vIt = labelStatisticsImageFilter->GetValidLabelValues().begin();
-		//		vIt != labelStatisticsImageFilter->GetValidLabelValues().end();
-		//		++vIt)
-		//	{
-		//		if (labelStatisticsImageFilter->HasLabel(*vIt))
-		//		{
-		//			LabelPixelType labelValue = *vIt;
-		//			std::cout << "min: " << labelStatisticsImageFilter->GetMinimum(labelValue) << std::endl;
-		//			std::cout << "max: " << labelStatisticsImageFilter->GetMaximum(labelValue) << std::endl;
-		//			std::cout << "median: " << labelStatisticsImageFilter->GetMedian(labelValue) << std::endl;
-		//			std::cout << "mean: " << labelStatisticsImageFilter->GetMean(labelValue) << std::endl;
-		//			std::cout << "sigma: " << labelStatisticsImageFilter->GetSigma(labelValue) << std::endl;
-		//			std::cout << "variance: " << labelStatisticsImageFilter->GetVariance(labelValue) << std::endl;
-		//			std::cout << "sum: " << labelStatisticsImageFilter->GetSum(labelValue) << std::endl;
-		//			std::cout << "count: " << labelStatisticsImageFilter->GetCount(labelValue) << std::endl;
-		//			// std::cout << "box: " << labelStatisticsImageFilter->GetBoundingBox( labelValue ) << std::endl; // can't output
-		//			// a box
-		//			std::cout << "region: " << labelStatisticsImageFilter->GetRegion(labelValue) << std::endl;
-		//			std::cout << std::endl << std::endl;
-		//		}
-		//	}
-
-		
-
-			//rozrost 
-		/*	ConnectedThreshold::Pointer connThres = ConnectedThreshold::New();
-			connThres->SetInput(image3D);
-			connThres->SetConnectivity(ConnectedThreshold::FullConnectivity);
-			connThres->SetLower(500);
-		connThres->SetUpper(200);
-			ConnectedThreshold::IndexType seed1;
-			seed1[0] = 129; seed1[1] = 136; seed1[2] = 48;
-			connThres->SetSeed(seed1);
-			connThres->Update();
-
-			series3DWriter->SetInput(connThres->GetOutput());
-			series3DWriter->SetFileName("..\\wyniki\\rozrost.vtk");
-			series3DWriter->Update();*/
-			///spróbuj Confidence Filter filtr medianowy 
-
-
-			//otwarcie
-			/*BallType::SizeType rad;
-			rad[0] = 9;
-			rad[1] = 5;
-			int radius = 1;
-			using StructuringElementType = itk::BinaryBallStructuringElement<ImageType::PixelType, Image3DType::ImageDimension>;
-			StructuringElementType structuringElement;
-			structuringElement.SetRadius(radius);
-			structuringElement.CreateStructuringElement();
-
-			using BinaryMorphologicalOpeningImageFilterType = itk::BinaryMorphologicalOpeningImageFilter <Image3DType, Image3DType, StructuringElementType>;
-			BinaryMorphologicalOpeningImageFilterType::Pointer openingFilter
-				= BinaryMorphologicalOpeningImageFilterType::New();
-			openingFilter->SetInput(thresholder->GetOutput());
-			openingFilter->SetKernel(structuringElement);
-			openingFilter->SetForegroundValue(1);
-			openingFilter->Update();
-
-			series3DWriter->SetInput(openingFilter->GetOutput());
-			series3DWriter->SetFileName("..\\wyniki\\img3D_op_seria.vtk");
-			series3DWriter->Update();
-
-			CCImageFilter->SetInput(image3D);
-			CCImageFilter->Update();
-			std::cout << CCImageFilter->GetObjectCount() << std::endl;*/
-
-
-			//Magnitude
-
-			//using FilterGradientType = itk::GradientMagnitudeImageFilter<Image3DType, Image3DType >;
-			//FilterGradientType::Pointer filterG = FilterGradientType::New();
-			//filterG->SetInput(image3D);
-			//filterG->Update();
-
-			//series3DWriter->SetInput(filterG->GetOutput());
-			//series3DWriter->SetFileName("..\\wyniki\\img3D_mag.vtk");
-			//series3DWriter->Update();
-
-
-			//thresholder->SetInput(filterG->GetOutput());
-			//thresholder->SetInsideValue(1);
-			//thresholder->SetOutsideValue(0);
-			//thresholder->SetLowerThreshold(120);
-			//thresholder->SetUpperThreshold(180);
-
-			//series3DWriter->SetInput(thresholder->GetOutput());
-			//series3DWriter->SetFileName("..\\wyniki\\img3D_bin_po_mag.vtk");
-			//series3DWriter->Update();
+	
 
 
 
 
-			//series3DWriter->SetInput(image3D);
+	using ResampleFilterType = itk::ResampleImageFilter<Image3DType, Image3DType>;
+	ResampleFilterType::Pointer resampler = ResampleFilterType::New();
 
-			//writer->SetInput(openingFilter->GetOutput());
-			//writer->SetFileName("../wyniki/otwarcie_48.dcm");
-			//writer->Update();
+	using TransformType = itk::AffineTransform<double, 3>;
+	TransformType::Pointer transform = TransformType::New();
+	TransformType::OutputVectorType translation;
+	translation[0] = -8; // X translation in millimeters
+	translation[1] = 0; // Y translation in millimeters
+	translation[2] = 0; // Z translation in millimeters
+	transform->Translate(translation);
+
+	resampler->SetInput(flipImage);
+	resampler->SetTransform(transform);
+	
+	resampler->SetSize(flipImage->GetLargestPossibleRegion().GetSize());
+	resampler->SetOutputOrigin(flipImage->GetOrigin());
+	resampler->SetOutputSpacing(flipImage->GetSpacing());
+	resampler->SetOutputDirection(flipImage->GetDirection());
+	resampler->SetDefaultPixelValue(100);
+
+	series3DWriter->SetInput(resampler->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_resample.vtk");
+	series3DWriter->Update();
 
 
-			//using FilterType = itk::OtsuMultipleThresholdsImageFilter<ImageType, ImageType>;
-			//FilterType::Pointer thresholderOtsu = FilterType::New();
-			//thresholderOtsu->SetInput(image);
-			//thresholderOtsu->SetLabelOffset(0);
-			//thresholderOtsu->SetNumberOfHistogramBins(100);
-			//thresholderOtsu->SetNumberOfThresholds(5);
 
-			//writer->SetInput(thresholderOtsu->GetOutput());
-			//writer->SetFileName("../wyniki/intensywnosc_48.dcm");
-			//writer->Update();
+
+	using AddImageFilterType = itk::AddImageFilter<Image3DType, Image3DType>;
+
+	AddImageFilterType::Pointer addFilter = AddImageFilterType::New();
+
+
+	Image3DType::Pointer flippedImage = Image3DType::New();
+	flippedImage = resampler->GetOutput();
+	flippedImage->CopyInformation(thresholder2->GetOutput());
+
+	addFilter->SetInput1(flippedImage);
+	addFilter->SetInput2(thresholder2->GetOutput());
+
+
+	series3DWriter->SetInput(addFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_dodawanie.vtk");
+	series3DWriter->Update();
+
+
+
+	WindowingImageFilter::Pointer windowingFilter = WindowingImageFilter::New();
+	windowingFilter->SetInput(addFilter->GetOutput());
+	windowingFilter->SetWindowMaximum(1000);
+	windowingFilter->SetWindowMinimum(0);
+	windowingFilter->SetOutputMinimum(0);
+	windowingFilter->SetOutputMaximum(1000);
+	windowingFilter->Update();
+	series3DWriter->SetInput(windowingFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9i_img3D_dodawanie_window.vtk");
+	series3DWriter->Update();
+
+
+
+	Image3DType::Pointer maskImage = Image3DType::New();
+	maskImage = windowingFilter->GetOutput();
+	maskImage->CopyInformation(image3D);
+
+	AddImageFilterType::Pointer addFilter2 = AddImageFilterType::New();
+	addFilter2->SetInput1(maskImage);
+	addFilter2->SetInput2(image3D);
+
+
+	series3DWriter->SetInput(addFilter2->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9j_img3D_nalozone_maski.vtk");
+	series3DWriter->Update();
+	
+
 	}
 catch(itk::ExceptionObject &ex){
 ex.Print(std::cout);
