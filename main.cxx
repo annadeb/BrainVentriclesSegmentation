@@ -61,7 +61,6 @@ using ConnectedFilterType = itk::ConfidenceConnectedImageFilter<Image3DType, Ima
 using InvertIntensityImageFilterType = itk::InvertIntensityImageFilter<Image3DType>;
 using WindowingImageFilter = itk::IntensityWindowingImageFilter<Image3DType>;
 using RelabelComponentFilterType = itk::RelabelComponentImageFilter<Image3DType, Image3DType>;
-using ResampleFilterType = itk::ResampleImageFilter<Image3DType, Image3DType>;
 using TransformType = itk::AffineTransform<double, 3>;
 using AddImageFilterType = itk::AddImageFilter<Image3DType, Image3DType>;
 
@@ -382,35 +381,41 @@ int main() // glowna funkcja programu
 	flipImage = flipFilter->GetOutput();
 	flipImage->CopyInformation(thresholder2->GetOutput());
 	
-	//#################### Korekta miejsca maski lewej komory ######################
-	std::cout << "Korekta miejsca maski lewej..." << std::endl;
+	//#################### Dylatacja obszaru poszukiwania maski lewej ######################
+	std::cout << "Dylatacja obszaru poszukiwania maski lewej..." << std::endl;
 
-	ResampleFilterType::Pointer resampler = ResampleFilterType::New();
+	FilterDilateType::Pointer dilateMask = FilterDilateType::New();
 
-	TransformType::Pointer transform = TransformType::New();
-	TransformType::OutputVectorType translation;
-	translation[0] = -8; // X translation in millimeters
-	translation[1] = 0; // Y translation in millimeters
-	translation[2] = 0; // Z translation in millimeters
-	transform->Translate(translation);
+	windowingImageFilter->SetInput(flipImage);
+	windowingImageFilter->SetWindowMaximum(1);
+	windowingImageFilter->SetWindowMinimum(0);
+	windowingImageFilter->SetOutputMinimum(0);
+	windowingImageFilter->SetOutputMaximum(1);
+	windowingImageFilter->Update();
 
-	resampler->SetInput(flipImage);
-	resampler->SetTransform(transform);
-	
-	resampler->SetSize(flipImage->GetLargestPossibleRegion().GetSize());
-	resampler->SetOutputOrigin(flipImage->GetOrigin());
-	resampler->SetOutputSpacing(flipImage->GetSpacing());
-	resampler->SetOutputDirection(flipImage->GetDirection());
-	resampler->SetDefaultPixelValue(100);
+	StructuringElementType dilateElement;
+	rad[0] = 8;
+	rad[1] = 3;
+	rad[2] = 1;
+	dilateElement.SetRadius(rad);
+	dilateElement.CreateStructuringElement();
 
-	series3DWriter->SetInput(resampler->GetOutput());
-	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_resample.vtk");
+	dilateFilter->SetInput(windowingImageFilter->GetOutput());
+	dilateFilter->SetKernel(dilateElement);
+	dilateFilter->SetBackgroundValue(0);
+	dilateFilter->SetForegroundValue(1);
+	dilateFilter->Update();
+
+	series3DWriter->SetInput(dilateFilter->GetOutput());
+	series3DWriter->SetFileName("..\\wyniki\\9h_img3D_dilate.vtk");
 	series3DWriter->Update();
+
+
 	//#####################	Mno¿enie prawej przesuniêtej maski z lew¹ komor¹  ######################
 	
 	MultiplyType::Pointer multiply_labelled = MultiplyType::New();
 	multiply_labelled->SetInput1(relabel->GetOutput());
-	image3D_mnozenie_left = resampler->GetOutput();
+	image3D_mnozenie_left = dilateFilter->GetOutput();
 	image3D_mnozenie_left->CopyInformation(relabel->GetOutput());
 	multiply_labelled->SetInput2(image3D_mnozenie_left);
 
@@ -441,7 +446,7 @@ int main() // glowna funkcja programu
 
 	WindowingImageFilter::Pointer windowingFilter = WindowingImageFilter::New();
 	windowingFilter->SetInput(addFilter->GetOutput());
-	windowingFilter->SetWindowMaximum(1000);
+	windowingFilter->SetWindowMaximum(1);
 	windowingFilter->SetWindowMinimum(0);
 	windowingFilter->SetOutputMinimum(0);
 	windowingFilter->SetOutputMaximum(1000);
